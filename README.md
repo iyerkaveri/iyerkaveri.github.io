@@ -1,1 +1,1 @@
-map of my foavirte place :) -Kavi Iyer
+map of my favorite places :) -Kavi Iyer
