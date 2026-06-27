@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chord Analyzer</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <h1>Chord Analyzer</h1>
+    <p class="subtitle">Play a chord on piano or guitar and we'll identify it.</p>
+
+    <div class="mic-select-row">
+      <label for="micSelect">Microphone:</label>
+      <select id="micSelect"></select>
+    </div>
+
+    <div class="controls">
+      <button id="startBtn" class="btn-primary">Start Listening</button>
+      <button id="stopBtn" class="btn-secondary" disabled>Stop</button>
+    </div>
+
+    <div class="accidental-toggle" role="group" aria-label="Accidental preference">
+      <button type="button" id="preferSharpBtn" class="toggle-option active">Prefer ♯</button>
+      <button type="button" id="preferFlatBtn" class="toggle-option">Prefer ♭</button>
+    </div>
+
+    <div class="status-bar">
+      <span id="statusText">Click "Start Listening" to begin.</span>
+    </div>
+
+    <div class="results" id="results" hidden>
+      <div class="chord-name" id="chordName">—</div>
+      <div class="notes-detected">
+        Detected notes: <span id="notesDetected">—</span>
+      </div>
+      <div id="notation"></div>
+    </div>
+
+    <div class="debug-panel" id="debugPanel" hidden>
+      <canvas id="spectrumCanvas" width="600" height="120"></canvas>
+    </div>
+
+    <label class="debug-toggle">
+      <input type="checkbox" id="debugToggle" /> Show frequency spectrum
+    </label>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow.js"></script>
+  <script src="pitchDetect.js"></script>
+  <script src="chordRecognize.js"></script>
+  <script src="notation.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
