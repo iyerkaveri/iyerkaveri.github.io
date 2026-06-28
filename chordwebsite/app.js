@@ -76,7 +76,7 @@ async function startCapture() {
     // Tear down any previous session first (e.g. switching microphones).
     cancelAnimationFrame(animFrame);
     if (currentStream) currentStream.getTracks().forEach(t => t.stop());
-    if (audioCtx) await audioCtx.close();
+    if (audioCtx && audioCtx.state !== "closed") await audioCtx.close();
 
     // Create (and resume) the AudioContext synchronously within the click's
     // user-gesture window, before any `await`. If we create it after awaiting
@@ -120,7 +120,7 @@ async function startCapture() {
 stopBtn.addEventListener("click", () => {
   cancelAnimationFrame(animFrame);
   if (currentStream) currentStream.getTracks().forEach(t => t.stop());
-  if (audioCtx) audioCtx.close();
+  if (audioCtx && audioCtx.state !== "closed") audioCtx.close();
   isListening = false;
   startBtn.disabled = false;
   stopBtn.disabled  = true;
