@@ -207,7 +207,7 @@ function drawSpectrum() {
 
   const w = canvas.width, h = canvas.height;
   canvasCtx.clearRect(0, 0, w, h);
-  canvasCtx.fillStyle = "#111";
+  canvasCtx.fillStyle = "#FFFBEF"; // --cream-light, matches the CSS background
   canvasCtx.fillRect(0, 0, w, h);
 
   // Only show 0–2kHz range
@@ -217,7 +217,9 @@ function drawSpectrum() {
   for (let i = 0; i < maxBin; i++) {
     const v = data[i] / 255;
     const barH = v * h;
-    canvasCtx.fillStyle = `hsl(${260 + v * 60}, 80%, ${40 + v * 30}%)`;
+    // Light background now, so darken toward green-deep as bars get louder
+    // instead of brightening — keeps bars readable against the cream fill.
+    canvasCtx.fillStyle = `hsl(95, ${30 + v * 25}%, ${75 - v * 45}%)`;
     canvasCtx.fillRect(i * barW, h - barH, Math.max(barW - 1, 1), barH);
   }
 }
