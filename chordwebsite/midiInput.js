@@ -46,16 +46,22 @@ function populateMidiDevices() {
   connectMidiInput(keepId);
 }
 
-function connectMidiInput(deviceId) {
-  if (selectedInput) selectedInput.onmidimessage = null;
+async function connectMidiInput(deviceId) {
+  if (selectedInput) {
+    selectedInput.onmidimessage = null;
+    await selectedInput.close().catch(() => {});
+  }
   selectedInput = deviceId ? (midiAccess.inputs.get(deviceId) ?? null) : null;
-  if (selectedInput) selectedInput.onmidimessage = handleMidi;
   activeNotes.clear();
   if (onNotesChange) onNotesChange([]);
+  if (!selectedInput) return;
+  await selectedInput.open();
+  selectedInput.onmidimessage = handleMidi;
 }
 
 function handleMidi(event) {
   const [status, note, velocity] = event.data;
+  console.log("MIDI:", status.toString(16), note, velocity);
   const cmd = status & 0xF0;
   if (cmd === 0x90 && velocity > 0) {
     activeNotes.add(note);
