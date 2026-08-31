@@ -184,6 +184,44 @@ button:disabled { opacity: 0.4; cursor: default; }
   display: block;
 }
 
+.tab-bar {
+  display: flex;
+  background: var(--cream-light);
+  border: 1px solid var(--tan-border);
+  border-radius: 12px;
+  padding: 4px;
+  gap: 4px;
+  width: 100%;
+  max-width: 360px;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 0.55rem 1rem;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.tab-btn.active {
+  background: var(--green);
+  color: var(--cream-light);
+}
+
+.tab-panel {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
 .debug-toggle {
   font-size: 0.8rem;
   font-weight: 700;

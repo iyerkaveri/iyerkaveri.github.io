@@ -3,7 +3,7 @@
 // harmonic/octave that the mic picked up looked noisy, so instead we rebuild a
 // clean root, 3rd, 5th (...) stack from the matched chord's tones.
 
-const { Renderer, Stave, StaveNote, Voice, Formatter, Accidental } = Vex.Flow;
+const { Renderer, Stave, StaveNote, StaveConnector, Voice, Formatter, Accidental } = Vex.Flow;
 
 const LETTER_ORDER = ["C", "D", "E", "F", "G", "A", "B"];
 const NATURAL_SEMITONE = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
@@ -87,6 +87,73 @@ function drawStave(ctx, clef, y, width, noteList) {
   voice.addTickables([staveNote]);
   new Formatter().joinVoices([voice]).format([voice], width - 80);
   voice.draw(ctx, stave);
+}
+
+// Convert a MIDI note number to a VexFlow key + accidental object.
+function midiToVexNote(midi, preference) {
+  const pc = midi % 12;
+  const octave = Math.floor(midi / 12) - 1;
+  const name = (preference === "flat" ? FLAT_NAMES : SHARP_NAMES)[pc];
+  const letter = name[0];
+  const acc = name.slice(1); // "#", "b", or ""
+  return { key: `${letter.toLowerCase()}/${octave}`, accidental: acc };
+}
+
+// Draw a single stave with actual notes (or a rest if none). Returns the Stave object.
+function drawActualStave(ctx, clef, y, width, vexNotes) {
+  const stave = new Stave(20, y, width - 40);
+  stave.addClef(clef);
+  stave.setContext(ctx).draw();
+
+  const restKey = clef === "treble" ? "b/4" : "d/3";
+  if (vexNotes.length === 0) {
+    const rest = new StaveNote({ clef, keys: [restKey], duration: "wr" });
+    const voice = new Voice({ num_beats: 4, beat_value: 4 });
+    voice.addTickables([rest]);
+    new Formatter().joinVoices([voice]).format([voice], width - 80);
+    voice.draw(ctx, stave);
+    return stave;
+  }
+
+  const keys = vexNotes.map(n => n.key);
+  const staveNote = new StaveNote({ clef, keys, duration: "w" });
+  vexNotes.forEach((n, i) => {
+    if (n.accidental) staveNote.addModifier(new Accidental(n.accidental), i);
+  });
+  const voice = new Voice({ num_beats: 4, beat_value: 4 });
+  voice.addTickables([staveNote]);
+  new Formatter().joinVoices([voice]).format([voice], width - 80);
+  voice.draw(ctx, stave);
+  return stave;
+}
+
+// Render actual MIDI notes on a grand staff (treble + bass) with brace.
+// midiNotes is an array of sorted midi integers.
+function renderGrandStaffNotation(midiNotes, preference) {
+  const container = document.getElementById("midiNotation");
+  container.innerHTML = "";
+
+  // Split: C4 (midi 60) and above → treble; below → bass
+  const trebleVex = midiNotes.filter(m => m >= 60).map(m => midiToVexNote(m, preference));
+  const bassVex   = midiNotes.filter(m => m < 60).map(m => midiToVexNote(m, preference));
+
+  const width = Math.min((container.parentElement?.clientWidth ?? 500) - 40, 500);
+  const height = 230;
+
+  const renderer = new Renderer(container, Renderer.Backends.SVG);
+  renderer.resize(width, height);
+  const ctx = renderer.getContext();
+
+  const trebleStave = drawActualStave(ctx, "treble", 10,  width, trebleVex);
+  const bassStave   = drawActualStave(ctx, "bass",   120, width, bassVex);
+
+  // Grand staff brace + left bar
+  new StaveConnector(trebleStave, bassStave)
+    .setType(StaveConnector.type.BRACE)
+    .setContext(ctx).draw();
+  new StaveConnector(trebleStave, bassStave)
+    .setType(StaveConnector.type.SINGLE_LEFT)
+    .setContext(ctx).draw();
 }
 
 // Render the canonical root-position chord on a single treble staff.

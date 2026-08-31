@@ -14,46 +14,77 @@
     <h1>Chord Analyzer</h1>
     <p class="subtitle">Play a chord on piano and we'll identify it.</p>
 
-    <div class="mic-select-row">
-      <label for="micSelect">Microphone:</label>
-      <select id="micSelect"></select>
+    <!-- Tab bar -->
+    <div class="tab-bar" role="tablist">
+      <button class="tab-btn active" data-tab="mic" role="tab">🎤 Microphone</button>
+      <button class="tab-btn" data-tab="midi" role="tab">🎹 MIDI Keyboard</button>
     </div>
 
-    <div class="controls">
-      <button id="startBtn" class="btn-primary">Start Listening</button>
-      <button id="stopBtn" class="btn-secondary" disabled>Stop</button>
-    </div>
-
+    <!-- Shared: accidental preference -->
     <div class="accidental-toggle" role="group" aria-label="Accidental preference">
       <button type="button" id="preferSharpBtn" class="toggle-option active">Prefer ♯</button>
       <button type="button" id="preferFlatBtn" class="toggle-option">Prefer ♭</button>
     </div>
 
-    <div class="status-bar">
-      <span id="statusText">Click "Start Listening" to begin.</span>
-    </div>
-
-    <div class="results" id="results" hidden>
-      <div class="chord-name" id="chordName">—</div>
-      <div class="notes-detected">
-        Detected notes: <span id="notesDetected">—</span>
+    <!-- ── Microphone panel ── -->
+    <div id="tab-mic" class="tab-panel">
+      <div class="mic-select-row">
+        <label for="micSelect">Microphone:</label>
+        <select id="micSelect"></select>
       </div>
-      <div id="notation"></div>
+
+      <div class="controls">
+        <button id="startBtn" class="btn-primary">Start Listening</button>
+        <button id="stopBtn" class="btn-secondary" disabled>Stop</button>
+      </div>
+
+      <div class="status-bar">
+        <span id="statusText">Click "Start Listening" to begin.</span>
+      </div>
+
+      <div class="results" id="results" hidden>
+        <div class="chord-name" id="chordName">—</div>
+        <div class="notes-detected">
+          Detected notes: <span id="notesDetected">—</span>
+        </div>
+        <div id="notation"></div>
+      </div>
+
+      <div class="debug-panel" id="debugPanel" hidden>
+        <canvas id="spectrumCanvas" width="600" height="120"></canvas>
+      </div>
+
+      <label class="debug-toggle">
+        <input type="checkbox" id="debugToggle" /> Show frequency spectrum
+      </label>
     </div>
 
-    <div class="debug-panel" id="debugPanel" hidden>
-      <canvas id="spectrumCanvas" width="600" height="120"></canvas>
-    </div>
+    <!-- ── MIDI panel ── -->
+    <div id="tab-midi" class="tab-panel" hidden>
+      <div class="midi-select-row mic-select-row">
+        <label for="midiSelect">MIDI Device:</label>
+        <select id="midiSelect"></select>
+      </div>
 
-    <label class="debug-toggle">
-      <input type="checkbox" id="debugToggle" /> Show frequency spectrum
-    </label>
+      <div class="status-bar">
+        <span id="midiStatusText">Connect a MIDI keyboard to begin.</span>
+      </div>
+
+      <div class="results" id="midiResults">
+        <div class="chord-name" id="midiChordName">—</div>
+        <div class="notes-detected">
+          Playing: <span id="midiNotesDisplay">—</span>
+        </div>
+        <div id="midiNotation"></div>
+      </div>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.2/build/cjs/vexflow.js"></script>
   <script src="pitchDetect.js"></script>
   <script src="chordRecognize.js"></script>
   <script src="notation.js"></script>
+  <script src="midiInput.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
