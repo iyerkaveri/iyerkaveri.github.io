@@ -1,22 +1,22 @@
-// Main app: wires mic → FFT → pitch detection → chord recognition → display
-// Also handles MIDI tab: Web MIDI API → held notes → chord recognition → grand staff
-
-// ── DOM refs ────────────────────────────────────────────────────────────────
-const startBtn  = document.getElementById("startBtn");
-const stopBtn   = document.getElementById("stopBtn");
-const statusEl  = document.getElementById("statusText");
-const resultsEl = document.getElementById("results");
-const chordEl   = document.getElementById("chordName");
-const notesEl   = document.getElementById("notesDetected");
-const debugPanel = document.getElementById("debugPanel");
-const debugToggle = document.getElementById("debugToggle");
-const canvas    = document.getElementById("spectrumCanvas");
-const canvasCtx = canvas.getContext("2d");
+// ── DOM refs ──────────────────────────────────────────────────────────────────
 const preferSharpBtn = document.getElementById("preferSharpBtn");
 const preferFlatBtn  = document.getElementById("preferFlatBtn");
-const micSelect = document.getElementById("micSelect");
 
-// MIDI panel
+// Mic tab
+const micPanel   = document.getElementById("tab-mic");
+const startBtn   = document.getElementById("startBtn");
+const stopBtn    = document.getElementById("stopBtn");
+const statusEl   = document.getElementById("statusText");
+const resultsEl  = document.getElementById("results");
+const chordEl    = document.getElementById("chordName");
+const notesEl    = document.getElementById("notesDetected");
+const debugPanel = document.getElementById("debugPanel");
+const debugToggle = document.getElementById("debugToggle");
+const canvas     = document.getElementById("spectrumCanvas");
+const micSelect  = document.getElementById("micSelect");
+
+// MIDI tab
+const midiPanel      = document.getElementById("tab-midi");
 const midiStartBtn   = document.getElementById("midiStartBtn");
 const midiStopBtn    = document.getElementById("midiStopBtn");
 const midiStatusEl   = document.getElementById("midiStatusText");
@@ -25,28 +25,37 @@ const midiNotesEl    = document.getElementById("midiNotesDisplay");
 const midiResultsEl  = document.getElementById("midiResults");
 const midiDeviceRow  = document.getElementById("midiDeviceRow");
 
-let audioCtx, analyser, sourceNode, animFrame, currentStream;
+// ── Shared state ──────────────────────────────────────────────────────────────
 let accidentalPreference = "sharp";
-let lastNotes = null;
+let lastNotes     = null;
 let lastMidiNotes = [];
-let isListening = false;
 
-// ── Tab switching ────────────────────────────────────────────────────────────
-const tabBtns  = document.querySelectorAll(".tab-btn");
-const micPanel = document.getElementById("tab-mic");
-const midiPanel = document.getElementById("tab-midi");
-
-tabBtns.forEach(btn => {
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+document.querySelectorAll(".tab-btn").forEach(btn => {
   btn.addEventListener("click", () => {
     const tab = btn.dataset.tab;
-    tabBtns.forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
+
+    // Toggle button styles
+    document.querySelectorAll(".tab-btn").forEach(b =>
+      b.classList.toggle("active", b.dataset.tab === tab)
+    );
+
+    // Show/hide panels
     micPanel.classList.toggle("active",  tab === "mic");
     midiPanel.classList.toggle("active", tab === "midi");
+
+    // Stop mic if switching away
     if (tab !== "mic" && isListening) stopBtn.click();
+
+    // Lazy mic device enumeration
+    if (tab === "mic" && !micTabInitialized) {
+      micTabInitialized = true;
+      populateMicList();
+    }
   });
 });
 
-// ── Accidental preference (shared across tabs) ─────────────────────────────
+// ── Accidental preference ─────────────────────────────────────────────────────
 preferSharpBtn.addEventListener("click", () => setAccidentalPreference("sharp"));
 preferFlatBtn.addEventListener("click",  () => setAccidentalPreference("flat"));
 
@@ -54,27 +63,20 @@ function setAccidentalPreference(pref) {
   accidentalPreference = pref;
   preferSharpBtn.classList.toggle("active", pref === "sharp");
   preferFlatBtn.classList.toggle("active",  pref === "flat");
-  if (lastNotes)             renderResult(lastNotes);
-  if (lastMidiNotes.length)  onMidiNotesChange(lastMidiNotes);
+  if (lastNotes)            renderResult(lastNotes);
+  if (lastMidiNotes.length) onMidiNotesChange(lastMidiNotes);
 }
 
-// Defer mic device enumeration until mic tab is first opened
+// ── Microphone ────────────────────────────────────────────────────────────────
+let audioCtx, analyser, sourceNode, animFrame, currentStream;
+let isListening = false;
 let micTabInitialized = false;
-tabBtns.forEach(btn => {
-  btn.addEventListener("click", () => {
-    if (btn.dataset.tab === "mic" && !micTabInitialized) {
-      micTabInitialized = true;
-      populateMicList();
-    }
-  });
-});
 
-// ── Microphone ───────────────────────────────────────────────────────────────
 async function populateMicList() {
   try {
     const devices = await navigator.mediaDevices.enumerateDevices();
     const mics = devices.filter(d => d.kind === "audioinput");
-    const previousValue = micSelect.value;
+    const prev = micSelect.value;
     micSelect.innerHTML = "";
     mics.forEach((d, i) => {
       const opt = document.createElement("option");
@@ -82,30 +84,18 @@ async function populateMicList() {
       opt.textContent = d.label || `Microphone ${i + 1}`;
       micSelect.appendChild(opt);
     });
-    if (previousValue && mics.some(d => d.deviceId === previousValue)) {
-      micSelect.value = previousValue;
-    }
+    if (prev && mics.some(d => d.deviceId === prev)) micSelect.value = prev;
   } catch (e) {
     console.error("Could not list microphones:", e);
   }
 }
 
-// populateMicList() is called lazily when mic tab is first opened (above).
 navigator.mediaDevices.addEventListener?.("devicechange", () => {
   if (micTabInitialized) populateMicList();
 });
 
 micSelect.addEventListener("change", () => {
   if (isListening) startCapture();
-});
-
-const VOTE_WINDOW_MS = 300;
-const ANALYSIS_INTERVAL_MS = 50;
-let voteAccumulator = {};
-let voteStart = 0;
-
-debugToggle.addEventListener("change", () => {
-  debugPanel.hidden = !debugToggle.checked;
 });
 
 startBtn.addEventListener("click", startCapture);
@@ -129,7 +119,6 @@ async function startCapture() {
     analyser = audioCtx.createAnalyser();
     analyser.fftSize = 8192;
     analyser.smoothingTimeConstant = 0.6;
-
     sourceNode = audioCtx.createMediaStreamSource(stream);
     sourceNode.connect(analyser);
 
@@ -160,7 +149,15 @@ stopBtn.addEventListener("click", () => {
   statusEl.textContent = "Stopped.";
 });
 
+const VOTE_WINDOW_MS = 300;
+const ANALYSIS_INTERVAL_MS = 50;
+let voteAccumulator = {};
+let voteStart = 0;
 let lastAnalysis = 0;
+
+debugToggle.addEventListener("change", () => {
+  debugPanel.hidden = !debugToggle.checked;
+});
 
 function loop(ts = 0) {
   animFrame = requestAnimationFrame(loop);
@@ -217,6 +214,7 @@ function renderResult(notes) {
 }
 
 function drawSpectrum() {
+  const canvasCtx = canvas.getContext("2d");
   const bufLen = analyser.frequencyBinCount;
   const data = new Uint8Array(bufLen);
   analyser.getByteFrequencyData(data);
@@ -234,32 +232,7 @@ function drawSpectrum() {
   }
 }
 
-// ── MIDI ─────────────────────────────────────────────────────────────────────
-function onMidiNotesChange(midiNotes) {
-  lastMidiNotes = midiNotes;
-  if (midiNotes.length === 0) {
-    midiChordEl.textContent = "—";
-    midiNotesEl.textContent = "—";
-    midiStatusEl.textContent = "Play notes on your keyboard.";
-    renderGrandStaffNotation([], accidentalPreference);
-    return;
-  }
-
-  const noteObjs = midiNotes.map(m => ({ midi: m }));
-  const chord = recognizeChord(noteObjs, accidentalPreference);
-  const names = midiNotes.map(m => toMusicSymbols(midiToNoteName(m, accidentalPreference)));
-
-  midiNotesEl.textContent = names.join(", ");
-  midiChordEl.textContent = chord ? toMusicSymbols(chord.chord) : (midiNotes.length >= 2 ? "?" : "—");
-  midiStatusEl.textContent = chord ? "Chord detected!" : "Listening…";
-
-  renderGrandStaffNotation(midiNotes, accidentalPreference);
-}
-
-document.getElementById("midiSelect").addEventListener("change", e => {
-  connectMidiInput(e.target.value);
-});
-
+// ── MIDI ──────────────────────────────────────────────────────────────────────
 let midiRunning = false;
 
 midiStartBtn.addEventListener("click", async () => {
@@ -270,7 +243,7 @@ midiStartBtn.addEventListener("click", async () => {
 
   const ok = await initMidi(onMidiNotesChange);
   if (!ok) {
-    midiStatusEl.textContent = "Web MIDI is not supported in this browser. Try Chrome or Edge.";
+    midiStatusEl.textContent = "Web MIDI not supported. Try Chrome or Edge.";
     midiStatusEl.style.color = "#f87171";
     midiStartBtn.disabled = false;
     return;
@@ -293,6 +266,33 @@ midiStopBtn.addEventListener("click", () => {
   midiResultsEl.style.display = "none";
   midiChordEl.textContent = "—";
   midiNotesEl.textContent = "—";
-  midiStatusEl.textContent = "Click "Start Analyzing" to begin.";
+  midiStatusEl.textContent = "Click “Start Analyzing” to begin.";
   document.getElementById("midiNotation").innerHTML = "";
 });
+
+document.getElementById("midiSelect").addEventListener("change", e => {
+  connectMidiInput(e.target.value);
+});
+
+function onMidiNotesChange(midiNotes) {
+  lastMidiNotes = midiNotes;
+  if (midiNotes.length === 0) {
+    midiChordEl.textContent = "—";
+    midiNotesEl.textContent = "—";
+    midiStatusEl.textContent = "Play notes on your keyboard.";
+    renderGrandStaffNotation([], accidentalPreference);
+    return;
+  }
+
+  const noteObjs = midiNotes.map(m => ({ midi: m }));
+  const chord = recognizeChord(noteObjs, accidentalPreference);
+  const names = midiNotes.map(m => toMusicSymbols(midiToNoteName(m, accidentalPreference)));
+
+  midiNotesEl.textContent = names.join(", ");
+  midiChordEl.textContent = chord
+    ? toMusicSymbols(chord.chord)
+    : (midiNotes.length >= 2 ? "?" : "—");
+  midiStatusEl.textContent = chord ? "Chord detected!" : "Listening…";
+
+  renderGrandStaffNotation(midiNotes, accidentalPreference);
+}
