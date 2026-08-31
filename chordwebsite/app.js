@@ -17,9 +17,13 @@ const preferFlatBtn  = document.getElementById("preferFlatBtn");
 const micSelect = document.getElementById("micSelect");
 
 // MIDI panel
+const midiStartBtn   = document.getElementById("midiStartBtn");
+const midiStopBtn    = document.getElementById("midiStopBtn");
 const midiStatusEl   = document.getElementById("midiStatusText");
 const midiChordEl    = document.getElementById("midiChordName");
 const midiNotesEl    = document.getElementById("midiNotesDisplay");
+const midiResultsEl  = document.getElementById("midiResults");
+const midiDeviceRow  = document.getElementById("midiDeviceRow");
 
 let audioCtx, analyser, sourceNode, animFrame, currentStream;
 let accidentalPreference = "sharp";
@@ -42,7 +46,7 @@ tabBtns.forEach(btn => {
   });
 });
 
-// ── Accidental preference (shared across tabs) ────────────────────────────
+// ── Accidental preference (shared across tabs) ─────────────────────────────
 preferSharpBtn.addEventListener("click", () => setAccidentalPreference("sharp"));
 preferFlatBtn.addEventListener("click",  () => setAccidentalPreference("flat"));
 
@@ -53,6 +57,17 @@ function setAccidentalPreference(pref) {
   if (lastNotes)             renderResult(lastNotes);
   if (lastMidiNotes.length)  onMidiNotesChange(lastMidiNotes);
 }
+
+// Defer mic device enumeration until mic tab is first opened
+let micTabInitialized = false;
+tabBtns.forEach(btn => {
+  btn.addEventListener("click", () => {
+    if (btn.dataset.tab === "mic" && !micTabInitialized) {
+      micTabInitialized = true;
+      populateMicList();
+    }
+  });
+});
 
 // ── Microphone ───────────────────────────────────────────────────────────────
 async function populateMicList() {
@@ -75,8 +90,10 @@ async function populateMicList() {
   }
 }
 
-populateMicList();
-navigator.mediaDevices.addEventListener?.("devicechange", populateMicList);
+// populateMicList() is called lazily when mic tab is first opened (above).
+navigator.mediaDevices.addEventListener?.("devicechange", () => {
+  if (micTabInitialized) populateMicList();
+});
 
 micSelect.addEventListener("change", () => {
   if (isListening) startCapture();
@@ -243,15 +260,39 @@ document.getElementById("midiSelect").addEventListener("change", e => {
   connectMidiInput(e.target.value);
 });
 
-// Init MIDI when MIDI tab is first opened (lazy, so we don't hit the permission
-// prompt until the user actually wants MIDI).
-let midiInitialized = false;
-document.querySelector('[data-tab="midi"]').addEventListener("click", async () => {
-  if (midiInitialized) return;
-  midiInitialized = true;
+let midiRunning = false;
+
+midiStartBtn.addEventListener("click", async () => {
+  if (midiRunning) return;
+  midiStartBtn.disabled = true;
+  midiStatusEl.textContent = "Requesting MIDI access…";
+  midiStatusEl.style.color = "";
+
   const ok = await initMidi(onMidiNotesChange);
   if (!ok) {
     midiStatusEl.textContent = "Web MIDI is not supported in this browser. Try Chrome or Edge.";
     midiStatusEl.style.color = "#f87171";
+    midiStartBtn.disabled = false;
+    return;
   }
+
+  midiRunning = true;
+  midiStartBtn.disabled = true;
+  midiStopBtn.disabled  = false;
+  midiDeviceRow.hidden  = false;
+  midiResultsEl.hidden  = false;
+  midiStatusEl.textContent = "Play notes on your keyboard.";
+});
+
+midiStopBtn.addEventListener("click", () => {
+  stopMidi();
+  midiRunning = false;
+  midiStartBtn.disabled = false;
+  midiStopBtn.disabled  = true;
+  midiDeviceRow.hidden  = true;
+  midiResultsEl.hidden  = true;
+  midiChordEl.textContent = "—";
+  midiNotesEl.textContent = "—";
+  midiStatusEl.textContent = "Click "Start Analyzing" to begin.";
+  document.getElementById("midiNotation").innerHTML = "";
 });

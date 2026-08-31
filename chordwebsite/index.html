@@ -61,16 +61,21 @@
 
     <!-- ── MIDI panel ── -->
     <div id="tab-midi" class="tab-panel" hidden>
-      <div class="midi-select-row mic-select-row">
+      <div class="controls">
+        <button id="midiStartBtn" class="btn-primary">Start Analyzing</button>
+        <button id="midiStopBtn" class="btn-secondary" disabled>Stop</button>
+      </div>
+
+      <div class="mic-select-row" id="midiDeviceRow" hidden>
         <label for="midiSelect">MIDI Device:</label>
         <select id="midiSelect"></select>
       </div>
 
       <div class="status-bar">
-        <span id="midiStatusText">Connect a MIDI keyboard to begin.</span>
+        <span id="midiStatusText">Click "Start Analyzing" to begin.</span>
       </div>
 
-      <div class="results" id="midiResults">
+      <div class="results" id="midiResults" hidden>
         <div class="chord-name" id="midiChordName">—</div>
         <div class="notes-detected">
           Playing: <span id="midiNotesDisplay">—</span>
