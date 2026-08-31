@@ -40,8 +40,8 @@ tabBtns.forEach(btn => {
   btn.addEventListener("click", () => {
     const tab = btn.dataset.tab;
     tabBtns.forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
-    micPanel.hidden  = tab !== "mic";
-    midiPanel.hidden = tab !== "midi";
+    micPanel.classList.toggle("active",  tab === "mic");
+    midiPanel.classList.toggle("active", tab === "midi");
     if (tab !== "mic" && isListening) stopBtn.click();
   });
 });
@@ -279,8 +279,8 @@ midiStartBtn.addEventListener("click", async () => {
   midiRunning = true;
   midiStartBtn.disabled = true;
   midiStopBtn.disabled  = false;
-  midiDeviceRow.hidden  = false;
-  midiResultsEl.hidden  = false;
+  midiDeviceRow.style.display = "flex";
+  midiResultsEl.style.display = "flex";
   midiStatusEl.textContent = "Play notes on your keyboard.";
 });
 
@@ -289,8 +289,8 @@ midiStopBtn.addEventListener("click", () => {
   midiRunning = false;
   midiStartBtn.disabled = false;
   midiStopBtn.disabled  = true;
-  midiDeviceRow.hidden  = true;
-  midiResultsEl.hidden  = true;
+  midiDeviceRow.style.display = "none";
+  midiResultsEl.style.display = "none";
   midiChordEl.textContent = "—";
   midiNotesEl.textContent = "—";
   midiStatusEl.textContent = "Click "Start Analyzing" to begin.";

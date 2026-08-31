@@ -27,7 +27,7 @@
     </div>
 
     <!-- ── Microphone panel ── -->
-    <div id="tab-mic" class="tab-panel">
+    <div id="tab-mic" class="tab-panel active">
       <div class="mic-select-row">
         <label for="micSelect">Microphone:</label>
         <select id="micSelect"></select>
@@ -60,13 +60,13 @@
     </div>
 
     <!-- ── MIDI panel ── -->
-    <div id="tab-midi" class="tab-panel" hidden>
+    <div id="tab-midi" class="tab-panel">
       <div class="controls">
         <button id="midiStartBtn" class="btn-primary">Start Analyzing</button>
         <button id="midiStopBtn" class="btn-secondary" disabled>Stop</button>
       </div>
 
-      <div class="mic-select-row" id="midiDeviceRow" hidden>
+      <div class="mic-select-row" id="midiDeviceRow" style="display:none">
         <label for="midiSelect">MIDI Device:</label>
         <select id="midiSelect"></select>
       </div>
@@ -75,7 +75,7 @@
         <span id="midiStatusText">Click "Start Analyzing" to begin.</span>
       </div>
 
-      <div class="results" id="midiResults" hidden>
+      <div class="results" id="midiResults" style="display:none">
         <div class="chord-name" id="midiChordName">—</div>
         <div class="notes-detected">
           Playing: <span id="midiNotesDisplay">—</span>

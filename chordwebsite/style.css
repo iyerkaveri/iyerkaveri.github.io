@@ -215,11 +215,15 @@ button:disabled { opacity: 0.4; cursor: default; }
 }
 
 .tab-panel {
+  display: none;
   width: 100%;
-  display: flex;
   flex-direction: column;
   align-items: center;
   gap: 1.5rem;
+}
+
+.tab-panel.active {
+  display: flex;
 }
 
 .debug-toggle {
