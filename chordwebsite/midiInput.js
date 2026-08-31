@@ -5,7 +5,6 @@ let midiAccess = null;
 let selectedInput = null;
 const activeNotes = new Set(); // held midi note numbers
 
-// onNotesChange(sortedMidiArray) is called on every state change.
 let onNotesChange = null;
 
 async function initMidi(onChange) {
@@ -13,8 +12,11 @@ async function initMidi(onChange) {
   if (!navigator.requestMIDIAccess) return false;
   try {
     midiAccess = await navigator.requestMIDIAccess({ sysex: false });
-    midiAccess.onstatechange = () => populateMidiDevices();
     populateMidiDevices();
+    // Set onstatechange AFTER initial setup to avoid a re-entrancy loop:
+    // open() fires onstatechange, which would call populateMidiDevices again,
+    // which would call connectMidiInput again, clearing activeNotes in a cycle.
+    midiAccess.onstatechange = () => populateMidiDevices();
     return true;
   } catch (e) {
     console.warn("MIDI access denied:", e);
@@ -47,30 +49,40 @@ function populateMidiDevices() {
 }
 
 async function connectMidiInput(deviceId) {
-  if (selectedInput) {
-    selectedInput.onmidimessage = null;
-    await selectedInput.close().catch(() => {});
-  }
-  selectedInput = deviceId ? (midiAccess.inputs.get(deviceId) ?? null) : null;
+  const newInput = deviceId ? (midiAccess.inputs.get(deviceId) ?? null) : null;
+
+  // Already connected to this device — nothing to do.
+  if (newInput === selectedInput && selectedInput !== null) return;
+
+  // Detach from old input without closing the port (closing triggers
+  // onstatechange, which would call connectMidiInput again in a loop).
+  if (selectedInput) selectedInput.onmidimessage = null;
+
+  selectedInput = newInput;
   activeNotes.clear();
   if (onNotesChange) onNotesChange([]);
   if (!selectedInput) return;
+
   await selectedInput.open();
   selectedInput.onmidimessage = handleMidi;
 }
 
 function handleMidi(event) {
   const [status, note, velocity] = event.data;
-  console.log("MIDI:", status.toString(16), note, velocity);
   const cmd = status & 0xF0;
+
   if (cmd === 0x90 && velocity > 0) {
     activeNotes.add(note);
   } else if (cmd === 0x80 || (cmd === 0x90 && velocity === 0)) {
     activeNotes.delete(note);
   } else if (cmd === 0xB0 && note === 123) {
-    // All Notes Off CC
+    // All Notes Off
     activeNotes.clear();
+  } else {
+    // Clock, active sensing, etc. — don't fire change callback for these.
+    return;
   }
+
   if (onNotesChange) onNotesChange([...activeNotes].sort((a, b) => a - b));
 }
 
@@ -80,5 +92,6 @@ function getMidiNotes() {
 
 function stopMidi() {
   if (selectedInput) selectedInput.onmidimessage = null;
+  selectedInput = null;
   activeNotes.clear();
 }

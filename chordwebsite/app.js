@@ -255,6 +255,8 @@ midiStartBtn.addEventListener("click", async () => {
   midiDeviceRow.style.display = "flex";
   midiResultsEl.style.display = "flex";
   midiStatusEl.textContent = "Play notes on your keyboard.";
+  // Render empty staff now that the container has real dimensions.
+  renderGrandStaffNotation([], accidentalPreference);
 });
 
 midiStopBtn.addEventListener("click", () => {
