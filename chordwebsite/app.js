@@ -1,6 +1,9 @@
 // ── DOM refs ──────────────────────────────────────────────────────────────────
-const preferSharpBtn = document.getElementById("preferSharpBtn");
-const preferFlatBtn  = document.getElementById("preferFlatBtn");
+const preferSharpBtn   = document.getElementById("preferSharpBtn");
+const preferFlatBtn    = document.getElementById("preferFlatBtn");
+const keySelectEl      = document.getElementById("keySelect");
+const micRomanEl       = document.getElementById("micRomanNumeral");
+const midiRomanEl      = document.getElementById("midiRomanNumeral");
 
 // Mic tab
 const micPanel        = document.getElementById("tab-mic");
@@ -28,6 +31,7 @@ const midiPianoRoll   = document.getElementById("midiPianoRoll");
 
 // ── Shared state ──────────────────────────────────────────────────────────────
 let accidentalPreference = "sharp";
+let selectedKey   = null; // { pc, mode } or null
 let lastNotes     = null;
 let lastMidiNotes = [];
 
@@ -46,6 +50,37 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
       populateMicList();
     }
   });
+});
+
+// ── Key selector ─────────────────────────────────────────────────────────────
+(function populateKeySelector() {
+  const frag = document.createDocumentFragment();
+  const majorGroup = document.createElement("optgroup");
+  majorGroup.label = "Major";
+  const minorGroup = document.createElement("optgroup");
+  minorGroup.label = "Minor";
+  for (const key of ALL_KEYS) {
+    const opt = document.createElement("option");
+    opt.value = `${key.pc}-${key.mode}`;
+    opt.textContent = key.label;
+    (key.mode === "major" ? majorGroup : minorGroup).appendChild(opt);
+  }
+  keySelectEl.appendChild(majorGroup);
+  keySelectEl.appendChild(minorGroup);
+})();
+
+keySelectEl.addEventListener("change", () => {
+  const val = keySelectEl.value;
+  if (!val) {
+    selectedKey = null;
+  } else {
+    const [pc, mode] = val.split("-");
+    selectedKey = { pc: +pc, mode };
+  }
+  if (lastNotes)            renderResult(lastNotes);
+  if (lastMidiNotes.length) onMidiNotesChange(lastMidiNotes);
+  if (!lastNotes)           micRomanEl.textContent = "";
+  if (!lastMidiNotes.length) midiRomanEl.textContent = "";
 });
 
 // ── Accidental preference ─────────────────────────────────────────────────────
@@ -225,8 +260,8 @@ function commitVotes() {
     if (v > bestCount) { bestCount = v; bestKey = k; }
   }
   if (!bestKey) {
-    // Nothing detected this window — clear chord display but keep piano
     chordEl.textContent = "";
+    micRomanEl.textContent = "";
     notesEl.textContent = "";
     micNotesDetEl.style.visibility = "hidden";
     document.getElementById("notation").innerHTML = "";
@@ -246,18 +281,23 @@ function renderResult(notes) {
 
   if (chord) {
     chordEl.textContent = toMusicSymbols(chord.chord);
+    micRomanEl.textContent = selectedKey
+      ? getRomanNumeral(chord, selectedKey.pc, selectedKey.mode)
+      : "";
     notesEl.textContent = toMusicSymbols(displayNames.join(", "));
     micNotesDetEl.style.visibility = "visible";
     statusEl.textContent = "Chord detected!";
     renderChordNotation(chord);
   } else if (notes.length >= 2) {
     chordEl.textContent = "?";
+    micRomanEl.textContent = "";
     notesEl.textContent = toMusicSymbols(displayNames.join(", "));
     micNotesDetEl.style.visibility = "visible";
     statusEl.textContent = "Notes detected (chord unknown)";
     document.getElementById("notation").innerHTML = "";
   } else {
     chordEl.textContent = "";
+    micRomanEl.textContent = "";
     notesEl.textContent = "";
     micNotesDetEl.style.visibility = "hidden";
     statusEl.textContent = "Listening… play a chord!";
@@ -297,9 +337,10 @@ midiStopBtn.addEventListener("click", () => {
   midiStopBtn.disabled  = true;
   midiDeviceRow.style.display = "none";
   midiResultsEl.style.display = "none";
-  midiChordEl.textContent = "";
-  midiNotesEl.textContent = "";
-  midiStatusEl.textContent = "Click “Start Analyzing” to begin.";
+  midiChordEl.textContent = “”;
+  midiRomanEl.textContent = “”;
+  midiNotesEl.textContent = “”;
+  midiStatusEl.textContent = “Click “Start Analyzing” to begin.”;
   document.getElementById("midiNotation").innerHTML = "";
   lastMidiNotes = [];
 });
@@ -314,6 +355,7 @@ function onMidiNotesChange(midiNotes) {
 
   if (midiNotes.length === 0) {
     midiChordEl.textContent = "";
+    midiRomanEl.textContent = "";
     midiNotesEl.textContent = "";
     midiNotesDetEl.style.visibility = "hidden";
     midiStatusEl.textContent = "Play notes on your keyboard.";
@@ -330,6 +372,9 @@ function onMidiNotesChange(midiNotes) {
   midiChordEl.textContent = chord
     ? toMusicSymbols(chord.chord)
     : (midiNotes.length >= 2 ? "?" : "");
+  midiRomanEl.textContent = (chord && selectedKey)
+    ? getRomanNumeral(chord, selectedKey.pc, selectedKey.mode)
+    : "";
   midiStatusEl.textContent = chord ? "Chord detected!" : "Listening…";
 
   renderGrandStaffNotation(midiNotes, accidentalPreference);

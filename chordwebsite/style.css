@@ -73,6 +73,42 @@ h1 {
   max-width: 260px;
 }
 
+.shared-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.key-select-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.key-select-row select {
+  background: var(--cream-light);
+  color: var(--text-main);
+  border: 1px solid var(--tan-border);
+  border-radius: 8px;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.85rem;
+  font-family: inherit;
+}
+
+.roman-numeral {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+  min-height: 0;
+  text-align: center;
+}
+
 button {
   font-family: inherit;
   padding: 0.7rem 1.8rem;
