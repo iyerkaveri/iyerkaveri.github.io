@@ -61,13 +61,18 @@ const CHORD_PATTERNS = [
   { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:9,step:5},{semitone:14,step:8}], suffix: "m6/9" },
 
   // ── 13ths ─────────────────────────────────────────────────────────────────
-  // Defined WITH the 9th so that C13+D scores higher than C9, preventing
-  // downgrade. C9 (above) comes first so a pure C9 voicing (no 13th) wins
-  // the tie over this pattern's 5/6 partial match.
+  // Two patterns per 13th type:
+  //  • 6-interval (with 9th): scores 6 when C,E,G,Bb,D,A all present →
+  //    beats C9 (score 5). C9 listed first so C9 wins the 5-5 tie when no A.
+  //  • 5-interval (without 9th): scores 4/5 = 0.80 when omit5 AND omit9
+  //    (e.g. C-E-Bb-A) → handles the omit5 case the 6-interval misses.
   // semitone 21 = 13th (step 12), semitone 14 = 9th (step 8)
   { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:14,step:8},{semitone:21,step:12}], suffix: "13"    },
   { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:11,step:6},{semitone:14,step:8},{semitone:21,step:12}], suffix: "maj13" },
   { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:14,step:8},{semitone:21,step:12}], suffix: "m13"   },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:21,step:12}], suffix: "13"    },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:11,step:6},{semitone:21,step:12}], suffix: "maj13" },
+  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:21,step:12}], suffix: "m13"   },
 
   // ── Altered dominants (b9/♯9 with b5 or #5) ──────────────────────────────
   { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:6,step:4},{semitone:10,step:6},{semitone:13,step:8}], suffix: "7b5b9"  },
