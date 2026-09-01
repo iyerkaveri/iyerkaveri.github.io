@@ -2,50 +2,82 @@
 // NOTE_NAMES / SHARP_NAMES / FLAT_NAMES are defined in pitchDetect.js (loaded first).
 
 // Each pattern lists its chord tones as { semitone, step } pairs:
-//   semitone = interval from root (matching uses this mod 12)
+//   semitone = interval from root (matching uses semitone % 12)
 //   step     = diatonic letter-steps from root (used to spell the tone with the
 //              correct accidental — e.g. b3 lands on the 3rd letter, flattened)
 const CHORD_PATTERNS = [
   // ── Power chord ───────────────────────────────────────────────────────────
-  { tones: [{semitone:0,step:0},{semitone:7,step:4}],                                              suffix: "5"     },
+  { tones: [{semitone:0,step:0},{semitone:7,step:4}],                                                           suffix: "5"       },
 
   // ── Triads ────────────────────────────────────────────────────────────────
-  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4}],                          suffix: ""      }, // Major
-  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4}],                          suffix: "m"     },
-  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:6,step:4}],                          suffix: "dim"   },
-  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:8,step:4}],                          suffix: "aug"   },
-  { tones: [{semitone:0,step:0},{semitone:5,step:3},{semitone:7,step:4}],                          suffix: "sus4"  },
-  { tones: [{semitone:0,step:0},{semitone:2,step:1},{semitone:7,step:4}],                          suffix: "sus2"  },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4}],                                        suffix: ""        },
+  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4}],                                        suffix: "m"       },
+  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:6,step:4}],                                        suffix: "dim"     },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:8,step:4}],                                        suffix: "aug"     },
+  { tones: [{semitone:0,step:0},{semitone:5,step:3},{semitone:7,step:4}],                                        suffix: "sus4"    },
+  { tones: [{semitone:0,step:0},{semitone:2,step:1},{semitone:7,step:4}],                                        suffix: "sus2"    },
+  { tones: [{semitone:0,step:0},{semitone:2,step:1},{semitone:5,step:3},{semitone:7,step:4}],                    suffix: "sus2sus4" },
 
-  // ── 7ths ──────────────────────────────────────────────────────────────────
-  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:11,step:6}],     suffix: "maj7"  },
-  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6}],     suffix: "7"     },
-  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:10,step:6}],     suffix: "m7"    },
-  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:11,step:6}],     suffix: "mMaj7" },
-  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:6,step:4},{semitone:10,step:6}],     suffix: "m7b5"  },
-  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:6,step:4},{semitone:9, step:6}],     suffix: "dim7"  },
-  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:8,step:4},{semitone:10,step:6}],     suffix: "aug7"  },
-  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:6,step:4},{semitone:10,step:6}],     suffix: "7b5"   },
-
-  // ── 9ths and altered dominants ────────────────────────────────────────────
-  // semitone 14 = 9th (step 8 = 2nd letter), 13 = b9, 15 = #9
-  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:14,step:8}], suffix: "9"    },
-  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:11,step:6},{semitone:14,step:8}], suffix: "maj9" },
-  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:14,step:8}], suffix: "m9"   },
-  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:13,step:8}], suffix: "7b9"  },
-  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:15,step:8}], suffix: "7#9"  },
-  // semitone 18 = #11 (step 10 = 4th letter, sharped)
-  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:18,step:10}], suffix: "7#11" },
-  // semitone 17 = 11th (step 10 = 4th letter, natural)
-  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:17,step:10}], suffix: "m11"  },
-
-  // ── Add chords ────────────────────────────────────────────────────────────
-  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:14,step:8}],     suffix: "add9"  },
-  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:14,step:8}],     suffix: "madd9" },
+  // ── Add chords (2nd/4th in same octave as triad) ──────────────────────────
+  { tones: [{semitone:0,step:0},{semitone:2,step:1},{semitone:4,step:2},{semitone:7,step:4}],                    suffix: "add2"    },
+  { tones: [{semitone:0,step:0},{semitone:2,step:1},{semitone:3,step:2},{semitone:7,step:4}],                    suffix: "madd2"   },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:5,step:3},{semitone:7,step:4}],                    suffix: "add4"    },
 
   // ── 6ths ──────────────────────────────────────────────────────────────────
-  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:9,step:5}],      suffix: "6"     },
-  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:9,step:5}],      suffix: "m6"    },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:9,step:5}],                    suffix: "6"       },
+  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:9,step:5}],                    suffix: "m6"      },
+
+  // ── 7ths ──────────────────────────────────────────────────────────────────
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:11,step:6}],                   suffix: "maj7"    },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6}],                   suffix: "7"       },
+  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:10,step:6}],                   suffix: "m7"      },
+  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:11,step:6}],                   suffix: "mM7"     },
+  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:6,step:4},{semitone:10,step:6}],                   suffix: "m7b5"    },
+  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:6,step:4},{semitone:9, step:6}],                   suffix: "dim7"    },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:8,step:4},{semitone:10,step:6}],                   suffix: "aug7"    },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:6,step:4},{semitone:10,step:6}],                   suffix: "7b5"     },
+  { tones: [{semitone:0,step:0},{semitone:5,step:3},{semitone:7,step:4},{semitone:10,step:6}],                                          suffix: "7sus4"       },
+  { tones: [{semitone:0,step:0},{semitone:2,step:1},{semitone:7,step:4},{semitone:10,step:6}],                                          suffix: "7sus2"       },
+  { tones: [{semitone:0,step:0},{semitone:2,step:1},{semitone:5,step:3},{semitone:7,step:4},{semitone:10,step:6}],                       suffix: "7sus2sus4"   },
+  { tones: [{semitone:0,step:0},{semitone:5,step:3},{semitone:7,step:4},{semitone:11,step:6}],                                          suffix: "maj7sus4"    },
+  { tones: [{semitone:0,step:0},{semitone:2,step:1},{semitone:7,step:4},{semitone:11,step:6}],                                          suffix: "maj7sus2"    },
+  { tones: [{semitone:0,step:0},{semitone:2,step:1},{semitone:5,step:3},{semitone:7,step:4},{semitone:11,step:6}],                       suffix: "maj7sus2sus4"},
+  { tones: [{semitone:0,step:0},{semitone:5,step:3},{semitone:7,step:4},{semitone:10,step:6},{semitone:21,step:12}],                     suffix: "13sus4"      },
+
+  // ── 9ths ──────────────────────────────────────────────────────────────────
+  // semitone 14 = 9th (step 8), 13 = b9, 15 = #9
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:14,step:8}], suffix: "9"     },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:11,step:6},{semitone:14,step:8}], suffix: "maj9"  },
+  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:14,step:8}], suffix: "m9"    },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:13,step:8}], suffix: "7b9"   },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:15,step:8}], suffix: "7#9"   },
+  // semitone 18 = #11 (step 10), 17 = 11th
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:18,step:10}], suffix: "7#11" },
+  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:17,step:10}], suffix: "m11"  },
+
+  // ── 13ths (core tones: root, 3, 5, b7/maj7, 13) ──────────────────────────
+  // semitone 21 = 13th (step 12, same PC as major 6th = 9)
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:21,step:12}], suffix: "13"    },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:11,step:6},{semitone:21,step:12}], suffix: "maj13" },
+  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:21,step:12}], suffix: "m13"   },
+
+  // ── Altered dominants (b9/♯9 with b5 or #5) ──────────────────────────────
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:6,step:4},{semitone:10,step:6},{semitone:13,step:8}], suffix: "7b5b9"  },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:8,step:4},{semitone:10,step:6},{semitone:13,step:8}], suffix: "7#5b9"  },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:6,step:4},{semitone:10,step:6},{semitone:15,step:8}], suffix: "7b5#9"  },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:8,step:4},{semitone:10,step:6},{semitone:15,step:8}], suffix: "7#5#9"  },
+
+  // 13 with b9 / #9
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:13,step:8},{semitone:21,step:12}], suffix: "13b9" },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:15,step:8},{semitone:21,step:12}], suffix: "13#9" },
+
+  // 7alt: dom7 with ≥3 of {b9,#9,b5,#5} — four 3-alteration combos + all-four.
+  // Ordered most→fewest intervals so highest score wins in the matching loop.
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:6,step:4},{semitone:8,step:4},{semitone:10,step:6},{semitone:13,step:8},{semitone:15,step:8}], suffix: "7alt" }, // all four
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:6,step:4},{semitone:10,step:6},{semitone:13,step:8},{semitone:15,step:8}], suffix: "7alt" }, // b9+#9+b5
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:8,step:4},{semitone:10,step:6},{semitone:13,step:8},{semitone:15,step:8}], suffix: "7alt" }, // b9+#9+#5
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:6,step:4},{semitone:8,step:4},{semitone:10,step:6},{semitone:13,step:8}], suffix: "7alt" }, // b9+b5+#5
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:6,step:4},{semitone:8,step:4},{semitone:10,step:6},{semitone:15,step:8}], suffix: "7alt" }, // #9+b5+#5
 ];
 
 // Derive flat semitone-interval list (mod 12) for matching logic.
