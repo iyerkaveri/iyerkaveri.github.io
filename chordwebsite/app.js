@@ -337,10 +337,10 @@ midiStopBtn.addEventListener("click", () => {
   midiStopBtn.disabled  = true;
   midiDeviceRow.style.display = "none";
   midiResultsEl.style.display = "none";
-  midiChordEl.textContent = “”;
-  midiRomanEl.textContent = “”;
-  midiNotesEl.textContent = “”;
-  midiStatusEl.textContent = “Click “Start Analyzing” to begin.”;
+  midiChordEl.textContent = "";
+  midiRomanEl.textContent = "";
+  midiNotesEl.textContent = "";
+  midiStatusEl.textContent = 'Click "Start Analyzing" to begin.';
   document.getElementById("midiNotation").innerHTML = "";
   lastMidiNotes = [];
 });
