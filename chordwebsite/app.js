@@ -3,27 +3,28 @@ const preferSharpBtn = document.getElementById("preferSharpBtn");
 const preferFlatBtn  = document.getElementById("preferFlatBtn");
 
 // Mic tab
-const micPanel   = document.getElementById("tab-mic");
-const startBtn   = document.getElementById("startBtn");
-const stopBtn    = document.getElementById("stopBtn");
-const statusEl   = document.getElementById("statusText");
-const resultsEl  = document.getElementById("results");
-const chordEl    = document.getElementById("chordName");
-const notesEl    = document.getElementById("notesDetected");
-const debugPanel = document.getElementById("debugPanel");
-const debugToggle = document.getElementById("debugToggle");
-const canvas     = document.getElementById("spectrumCanvas");
-const micSelect  = document.getElementById("micSelect");
+const micPanel        = document.getElementById("tab-mic");
+const startBtn        = document.getElementById("startBtn");
+const stopBtn         = document.getElementById("stopBtn");
+const statusEl        = document.getElementById("statusText");
+const resultsEl       = document.getElementById("results");
+const chordEl         = document.getElementById("chordName");
+const notesEl         = document.getElementById("notesDetected");
+const micNotesDetEl   = document.getElementById("micNotesDetected");
+const micPianoRoll    = document.getElementById("micPianoRoll");
+const micSelect       = document.getElementById("micSelect");
 
 // MIDI tab
-const midiPanel      = document.getElementById("tab-midi");
-const midiStartBtn   = document.getElementById("midiStartBtn");
-const midiStopBtn    = document.getElementById("midiStopBtn");
-const midiStatusEl   = document.getElementById("midiStatusText");
-const midiChordEl    = document.getElementById("midiChordName");
-const midiNotesEl    = document.getElementById("midiNotesDisplay");
-const midiResultsEl  = document.getElementById("midiResults");
-const midiDeviceRow  = document.getElementById("midiDeviceRow");
+const midiPanel       = document.getElementById("tab-midi");
+const midiStartBtn    = document.getElementById("midiStartBtn");
+const midiStopBtn     = document.getElementById("midiStopBtn");
+const midiStatusEl    = document.getElementById("midiStatusText");
+const midiChordEl     = document.getElementById("midiChordName");
+const midiNotesEl     = document.getElementById("midiNotesDisplay");
+const midiNotesDetEl  = document.getElementById("midiNotesDetected");
+const midiResultsEl   = document.getElementById("midiResults");
+const midiDeviceRow   = document.getElementById("midiDeviceRow");
+const midiPianoRoll   = document.getElementById("midiPianoRoll");
 
 // ── Shared state ──────────────────────────────────────────────────────────────
 let accidentalPreference = "sharp";
@@ -34,20 +35,12 @@ let lastMidiNotes = [];
 document.querySelectorAll(".tab-btn").forEach(btn => {
   btn.addEventListener("click", () => {
     const tab = btn.dataset.tab;
-
-    // Toggle button styles
     document.querySelectorAll(".tab-btn").forEach(b =>
       b.classList.toggle("active", b.dataset.tab === tab)
     );
-
-    // Show/hide panels
     micPanel.classList.toggle("active",  tab === "mic");
     midiPanel.classList.toggle("active", tab === "midi");
-
-    // Stop mic if switching away
     if (tab !== "mic" && isListening) stopBtn.click();
-
-    // Lazy mic device enumeration
     if (tab === "mic" && !micTabInitialized) {
       micTabInitialized = true;
       populateMicList();
@@ -65,6 +58,52 @@ function setAccidentalPreference(pref) {
   preferFlatBtn.classList.toggle("active",  pref === "flat");
   if (lastNotes)            renderResult(lastNotes);
   if (lastMidiNotes.length) onMidiNotesChange(lastMidiNotes);
+}
+
+// ── Piano roll ────────────────────────────────────────────────────────────────
+const PIANO_LOW  = 36;  // C2
+const PIANO_HIGH = 96;  // C7
+const IS_WHITE   = [true,false,true,false,true,true,false,true,false,true,false,true];
+// Left-edge x in white-key units for each pitch class within an octave
+const PC_X       = [0, 0.65, 1, 1.65, 2, 3, 3.65, 4, 4.65, 5, 5.65, 6];
+const NUM_WHITE  = 36; // C2 through C7 inclusive
+
+function pianoKeyX(midi, kw) {
+  const oct = Math.floor((midi - PIANO_LOW) / 12);
+  return (oct * 7 + PC_X[midi % 12]) * kw;
+}
+
+function drawPiano(canvas, highlightedMidi) {
+  const W = canvas.offsetWidth;
+  if (!W) return;
+  canvas.width = W;
+  const H = canvas.height;
+  const ctx = canvas.getContext("2d");
+  const kw = W / NUM_WHITE;
+  const bw = kw * 0.55;
+  const bh = H * 0.64;
+  const lit = new Set(highlightedMidi);
+
+  ctx.clearRect(0, 0, W, H);
+
+  // White keys
+  for (let m = PIANO_LOW; m <= PIANO_HIGH; m++) {
+    if (!IS_WHITE[m % 12]) continue;
+    const x = pianoKeyX(m, kw);
+    ctx.fillStyle = lit.has(m) ? "#6EA763" : "#FFFBEF";
+    ctx.fillRect(x + 0.5, 0.5, kw - 1, H - 1);
+    ctx.strokeStyle = "#E3D6A4";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x + 0.5, 0.5, kw - 1, H - 1);
+  }
+
+  // Black keys on top
+  for (let m = PIANO_LOW; m <= PIANO_HIGH; m++) {
+    if (IS_WHITE[m % 12]) continue;
+    const x = pianoKeyX(m, kw);
+    ctx.fillStyle = lit.has(m) ? "#4F7E47" : "#3A3424";
+    ctx.fillRect(x, 0, bw, bh);
+  }
 }
 
 // ── Microphone ────────────────────────────────────────────────────────────────
@@ -131,6 +170,7 @@ async function startCapture() {
     voteStart = performance.now();
 
     populateMicList();
+    drawPiano(micPianoRoll, []);
     loop();
   } catch (e) {
     console.error("Mic init failed:", e);
@@ -147,29 +187,29 @@ stopBtn.addEventListener("click", () => {
   startBtn.disabled = false;
   stopBtn.disabled  = true;
   statusEl.textContent = "Stopped.";
+  resultsEl.hidden = true;
+  lastNotes = null;
 });
 
-const VOTE_WINDOW_MS = 300;
+const VOTE_WINDOW_MS     = 300;
 const ANALYSIS_INTERVAL_MS = 50;
 let voteAccumulator = {};
 let voteStart = 0;
 let lastAnalysis = 0;
 
-debugToggle.addEventListener("change", () => {
-  debugPanel.hidden = !debugToggle.checked;
-});
-
 function loop(ts = 0) {
   animFrame = requestAnimationFrame(loop);
-  if (debugToggle.checked) drawSpectrum();
   if (ts - lastAnalysis < ANALYSIS_INTERVAL_MS) return;
   lastAnalysis = ts;
 
-  const notes = detectNotes(analyser);
-  if (notes.length >= 2) {
-    const key = notes.map(n => n.midi % 12).sort((a, b) => a - b).join(",");
+  const rawNotes = detectNotes(analyser);
+  // Update piano with raw detected notes on every frame
+  drawPiano(micPianoRoll, rawNotes.map(n => n.midi));
+
+  if (rawNotes.length >= 2) {
+    const key = rawNotes.map(n => n.midi % 12).sort((a, b) => a - b).join(",");
     voteAccumulator[key] = (voteAccumulator[key] || 0) + 1;
-    voteAccumulator[key + "_notes"] = notes;
+    voteAccumulator[key + "_notes"] = rawNotes;
   }
   if (ts - voteStart >= VOTE_WINDOW_MS) {
     commitVotes();
@@ -184,11 +224,16 @@ function commitVotes() {
     if (k.endsWith("_notes")) continue;
     if (v > bestCount) { bestCount = v; bestKey = k; }
   }
-  if (!bestKey) return;
+  if (!bestKey) {
+    // Nothing detected this window — clear chord display but keep piano
+    chordEl.textContent = "";
+    notesEl.textContent = "";
+    micNotesDetEl.style.visibility = "hidden";
+    document.getElementById("notation").innerHTML = "";
+    return;
+  }
   const notes = voteAccumulator[bestKey + "_notes"];
-  if (!notes) return;
-  lastNotes = notes;
-  renderResult(notes);
+  if (notes) { lastNotes = notes; renderResult(notes); }
 }
 
 function toMusicSymbols(str) {
@@ -198,37 +243,24 @@ function toMusicSymbols(str) {
 function renderResult(notes) {
   const chord = recognizeChord(notes, accidentalPreference);
   const displayNames = notes.map(n => midiToNoteName(n.midi, accidentalPreference));
+
   if (chord) {
     chordEl.textContent = toMusicSymbols(chord.chord);
     notesEl.textContent = toMusicSymbols(displayNames.join(", "));
+    micNotesDetEl.style.visibility = "visible";
     statusEl.textContent = "Chord detected!";
     renderChordNotation(chord);
   } else if (notes.length >= 2) {
     chordEl.textContent = "?";
     notesEl.textContent = toMusicSymbols(displayNames.join(", "));
+    micNotesDetEl.style.visibility = "visible";
     statusEl.textContent = "Notes detected (chord unknown)";
     document.getElementById("notation").innerHTML = "";
   } else {
+    chordEl.textContent = "";
+    notesEl.textContent = "";
+    micNotesDetEl.style.visibility = "hidden";
     statusEl.textContent = "Listening… play a chord!";
-  }
-}
-
-function drawSpectrum() {
-  const canvasCtx = canvas.getContext("2d");
-  const bufLen = analyser.frequencyBinCount;
-  const data = new Uint8Array(bufLen);
-  analyser.getByteFrequencyData(data);
-  const w = canvas.width, h = canvas.height;
-  canvasCtx.clearRect(0, 0, w, h);
-  canvasCtx.fillStyle = "#FFFBEF";
-  canvasCtx.fillRect(0, 0, w, h);
-  const maxBin = Math.floor(2000 / (analyser.context.sampleRate / analyser.fftSize));
-  const barW = w / maxBin;
-  for (let i = 0; i < maxBin; i++) {
-    const v = data[i] / 255;
-    const barH = v * h;
-    canvasCtx.fillStyle = `hsl(95, ${30 + v * 25}%, ${75 - v * 45}%)`;
-    canvasCtx.fillRect(i * barW, h - barH, Math.max(barW - 1, 1), barH);
   }
 }
 
@@ -255,8 +287,7 @@ midiStartBtn.addEventListener("click", async () => {
   midiDeviceRow.style.display = "flex";
   midiResultsEl.style.display = "flex";
   midiStatusEl.textContent = "Play notes on your keyboard.";
-  // Render empty staff now that the container has real dimensions.
-  renderGrandStaffNotation([], accidentalPreference);
+  drawPiano(midiPianoRoll, []);
 });
 
 midiStopBtn.addEventListener("click", () => {
@@ -266,10 +297,11 @@ midiStopBtn.addEventListener("click", () => {
   midiStopBtn.disabled  = true;
   midiDeviceRow.style.display = "none";
   midiResultsEl.style.display = "none";
-  midiChordEl.textContent = "—";
-  midiNotesEl.textContent = "—";
+  midiChordEl.textContent = "";
+  midiNotesEl.textContent = "";
   midiStatusEl.textContent = "Click “Start Analyzing” to begin.";
   document.getElementById("midiNotation").innerHTML = "";
+  lastMidiNotes = [];
 });
 
 document.getElementById("midiSelect").addEventListener("change", e => {
@@ -278,14 +310,18 @@ document.getElementById("midiSelect").addEventListener("change", e => {
 
 function onMidiNotesChange(midiNotes) {
   lastMidiNotes = midiNotes;
+  drawPiano(midiPianoRoll, midiNotes);
+
   if (midiNotes.length === 0) {
-    midiChordEl.textContent = "—";
-    midiNotesEl.textContent = "—";
+    midiChordEl.textContent = "";
+    midiNotesEl.textContent = "";
+    midiNotesDetEl.style.visibility = "hidden";
     midiStatusEl.textContent = "Play notes on your keyboard.";
     renderGrandStaffNotation([], accidentalPreference);
     return;
   }
 
+  midiNotesDetEl.style.visibility = "visible";
   const noteObjs = midiNotes.map(m => ({ midi: m }));
   const chord = recognizeChord(noteObjs, accidentalPreference);
   const names = midiNotes.map(m => toMusicSymbols(midiToNoteName(m, accidentalPreference)));
@@ -293,7 +329,7 @@ function onMidiNotesChange(midiNotes) {
   midiNotesEl.textContent = names.join(", ");
   midiChordEl.textContent = chord
     ? toMusicSymbols(chord.chord)
-    : (midiNotes.length >= 2 ? "?" : "—");
+    : (midiNotes.length >= 2 ? "?" : "");
   midiStatusEl.textContent = chord ? "Chord detected!" : "Listening…";
 
   renderGrandStaffNotation(midiNotes, accidentalPreference);

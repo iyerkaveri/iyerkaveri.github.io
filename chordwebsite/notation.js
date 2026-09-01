@@ -99,41 +99,14 @@ function midiToVexNote(midi, preference) {
   return { key: `${letter.toLowerCase()}/${octave}`, accidental: acc };
 }
 
-// Draw a single stave with actual notes (or a rest if none). Returns the Stave object.
-function drawActualStave(ctx, clef, y, width, vexNotes) {
-  const stave = new Stave(20, y, width - 40);
-  stave.addClef(clef);
-  stave.setContext(ctx).draw();
-
-  const restKey = clef === "treble" ? "b/4" : "d/3";
-  if (vexNotes.length === 0) {
-    const rest = new StaveNote({ clef, keys: [restKey], duration: "wr" });
-    const voice = new Voice({ num_beats: 4, beat_value: 4 });
-    voice.addTickables([rest]);
-    new Formatter().joinVoices([voice]).format([voice], width - 80);
-    voice.draw(ctx, stave);
-    return stave;
-  }
-
-  const keys = vexNotes.map(n => n.key);
-  const staveNote = new StaveNote({ clef, keys, duration: "w" });
-  vexNotes.forEach((n, i) => {
-    if (n.accidental) staveNote.addModifier(new Accidental(n.accidental), i);
-  });
-  const voice = new Voice({ num_beats: 4, beat_value: 4 });
-  voice.addTickables([staveNote]);
-  new Formatter().joinVoices([voice]).format([voice], width - 80);
-  voice.draw(ctx, stave);
-  return stave;
-}
-
 // Render actual MIDI notes on a grand staff (treble + bass) with brace.
+// Both voices are formatted together so notes align vertically regardless
+// of whether one hand has accidentals and the other does not.
 // midiNotes is an array of sorted midi integers.
 function renderGrandStaffNotation(midiNotes, preference) {
   const container = document.getElementById("midiNotation");
   container.innerHTML = "";
 
-  // Split: C4 (midi 60) and above → treble; below → bass
   const trebleVex = midiNotes.filter(m => m >= 60).map(m => midiToVexNote(m, preference));
   const bassVex   = midiNotes.filter(m => m < 60).map(m => midiToVexNote(m, preference));
 
@@ -144,16 +117,41 @@ function renderGrandStaffNotation(midiNotes, preference) {
   renderer.resize(width, height);
   const ctx = renderer.getContext();
 
-  const trebleStave = drawActualStave(ctx, "treble", 10,  width, trebleVex);
-  const bassStave   = drawActualStave(ctx, "bass",   120, width, bassVex);
+  const trebleStave = new Stave(20, 10,  width - 40).addClef("treble").setContext(ctx).draw();
+  const bassStave   = new Stave(20, 120, width - 40).addClef("bass").setContext(ctx).draw();
 
-  // Grand staff brace + left bar
   new StaveConnector(trebleStave, bassStave)
-    .setType(StaveConnector.type.BRACE)
-    .setContext(ctx).draw();
+    .setType(StaveConnector.type.BRACE).setContext(ctx).draw();
   new StaveConnector(trebleStave, bassStave)
-    .setType(StaveConnector.type.SINGLE_LEFT)
-    .setContext(ctx).draw();
+    .setType(StaveConnector.type.SINGLE_LEFT).setContext(ctx).draw();
+
+  // Build only the voices that have notes; format them together so
+  // accidentals on one stave don't shift noteheads out of vertical alignment.
+  const voices = [];
+  let trebleVoice = null, bassVoice = null;
+
+  if (trebleVex.length > 0) {
+    const sn = new StaveNote({ clef: "treble", keys: trebleVex.map(n => n.key), duration: "w" });
+    trebleVex.forEach((n, i) => { if (n.accidental) sn.addModifier(new Accidental(n.accidental), i); });
+    trebleVoice = new Voice({ num_beats: 4, beat_value: 4 }).addTickables([sn]);
+    voices.push(trebleVoice);
+  }
+
+  if (bassVex.length > 0) {
+    const sn = new StaveNote({ clef: "bass", keys: bassVex.map(n => n.key), duration: "w" });
+    bassVex.forEach((n, i) => { if (n.accidental) sn.addModifier(new Accidental(n.accidental), i); });
+    bassVoice = new Voice({ num_beats: 4, beat_value: 4 }).addTickables([sn]);
+    voices.push(bassVoice);
+  }
+
+  if (voices.length === 0) return;
+
+  const formatter = new Formatter();
+  voices.forEach(v => formatter.joinVoices([v]));
+  formatter.format(voices, width - 80);
+
+  if (trebleVoice) trebleVoice.draw(ctx, trebleStave);
+  if (bassVoice)   bassVoice.draw(ctx, bassStave);
 }
 
 // Render the canonical root-position chord on a single treble staff.

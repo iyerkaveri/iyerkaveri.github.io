@@ -14,13 +14,11 @@
     <h1>Chord Analyzer</h1>
     <p class="subtitle">Play a chord on piano and we'll identify it.</p>
 
-    <!-- Tab bar -->
     <div class="tab-bar" role="tablist">
       <button class="tab-btn active" data-tab="mic" role="tab">🎤 Microphone</button>
       <button class="tab-btn" data-tab="midi" role="tab">🎹 MIDI Keyboard</button>
     </div>
 
-    <!-- Shared: accidental preference -->
     <div class="accidental-toggle" role="group" aria-label="Accidental preference">
       <button type="button" id="preferSharpBtn" class="toggle-option active">Prefer ♯</button>
       <button type="button" id="preferFlatBtn" class="toggle-option">Prefer ♭</button>
@@ -43,20 +41,13 @@
       </div>
 
       <div class="results" id="results" hidden>
-        <div class="chord-name" id="chordName">—</div>
-        <div class="notes-detected">
-          Detected notes: <span id="notesDetected">—</span>
+        <div class="chord-name" id="chordName"></div>
+        <div class="notes-detected" id="micNotesDetected">
+          Detected notes: <span id="notesDetected"></span>
         </div>
         <div id="notation"></div>
+        <canvas class="piano-roll" id="micPianoRoll" height="60"></canvas>
       </div>
-
-      <div class="debug-panel" id="debugPanel" hidden>
-        <canvas id="spectrumCanvas" width="600" height="120"></canvas>
-      </div>
-
-      <label class="debug-toggle">
-        <input type="checkbox" id="debugToggle" /> Show frequency spectrum
-      </label>
     </div>
 
     <!-- ── MIDI panel ── -->
@@ -76,11 +67,12 @@
       </div>
 
       <div class="results" id="midiResults" style="display:none">
-        <div class="chord-name" id="midiChordName">—</div>
-        <div class="notes-detected">
-          Playing: <span id="midiNotesDisplay">—</span>
+        <div class="chord-name" id="midiChordName"></div>
+        <div class="notes-detected" id="midiNotesDetected">
+          Playing: <span id="midiNotesDisplay"></span>
         </div>
         <div id="midiNotation"></div>
+        <canvas class="piano-roll" id="midiPianoRoll" height="60"></canvas>
       </div>
     </div>
   </div>
