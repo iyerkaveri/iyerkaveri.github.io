@@ -55,11 +55,19 @@ const CHORD_PATTERNS = [
   { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:18,step:10}], suffix: "7#11" },
   { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:17,step:10}], suffix: "m11"  },
 
-  // ── 13ths (core tones: root, 3, 5, b7/maj7, 13) ──────────────────────────
-  // semitone 21 = 13th (step 12, same PC as major 6th = 9)
-  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:21,step:12}], suffix: "13"    },
-  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:11,step:6},{semitone:21,step:12}], suffix: "maj13" },
-  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:21,step:12}], suffix: "m13"   },
+  // ── 6/9 chords ────────────────────────────────────────────────────────────
+  // semitone 9 = 6th (step 5), semitone 14 = 9th (step 8)
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:9,step:5},{semitone:14,step:8}], suffix: "6/9"  },
+  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:9,step:5},{semitone:14,step:8}], suffix: "m6/9" },
+
+  // ── 13ths ─────────────────────────────────────────────────────────────────
+  // Defined WITH the 9th so that C13+D scores higher than C9, preventing
+  // downgrade. C9 (above) comes first so a pure C9 voicing (no 13th) wins
+  // the tie over this pattern's 5/6 partial match.
+  // semitone 21 = 13th (step 12), semitone 14 = 9th (step 8)
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:14,step:8},{semitone:21,step:12}], suffix: "13"    },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:11,step:6},{semitone:14,step:8},{semitone:21,step:12}], suffix: "maj13" },
+  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:14,step:8},{semitone:21,step:12}], suffix: "m13"   },
 
   // ── Altered dominants (b9/♯9 with b5 or #5) ──────────────────────────────
   { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:6,step:4},{semitone:10,step:6},{semitone:13,step:8}], suffix: "7b5b9"  },
@@ -112,7 +120,10 @@ function recognizeChord(notes, preference = "sharp") {
     for (const pattern of CHORD_PATTERNS) {
       const score = matchScore(pattern.intervals, pcs, root);
       const coverage = score / pattern.intervals.length;
-      if (coverage >= 0.85 && score > bestScore) {
+      // On a tie, prefer the interpretation whose root is the bass note
+      // (e.g. C6 vs Am7 with the same 4 pitch classes — bass decides).
+      const bassWins = score === bestScore && root === bassPC && bestMatch?.rootPC !== bassPC;
+      if (coverage >= 0.75 && (score > bestScore || bassWins)) {
         bestScore = score;
         bestMatch = {
           root:      names[root],
