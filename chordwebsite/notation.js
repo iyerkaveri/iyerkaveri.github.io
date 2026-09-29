@@ -103,12 +103,19 @@ function midiToVexNote(midi, preference) {
 // Both voices are formatted together so notes align vertically regardless
 // of whether one hand has accidentals and the other does not.
 // midiNotes is an array of sorted midi integers.
-function renderGrandStaffNotation(midiNotes, preference) {
+// opacityOf(midi) → 0..1 lets sustained notes fade; fully faded notes are omitted.
+function renderGrandStaffNotation(midiNotes, preference, opacityOf = () => 1) {
   const container = document.getElementById("midiNotation");
   container.innerHTML = "";
 
-  const trebleVex = midiNotes.filter(m => m >= 60).map(m => midiToVexNote(m, preference));
-  const bassVex   = midiNotes.filter(m => m < 60).map(m => midiToVexNote(m, preference));
+  const toStyled = m => {
+    const alpha = opacityOf(m);
+    const color = `rgba(0, 0, 0, ${alpha})`;
+    return { ...midiToVexNote(m, preference), style: { fillStyle: color, strokeStyle: color } };
+  };
+  const visible   = midiNotes.filter(m => opacityOf(m) > 0);
+  const trebleVex = visible.filter(m => m >= 60).map(toStyled);
+  const bassVex   = visible.filter(m => m < 60).map(toStyled);
 
   const width = Math.min((container.parentElement?.clientWidth ?? 500) - 40, 500);
   const height = 230;
@@ -132,14 +139,20 @@ function renderGrandStaffNotation(midiNotes, preference) {
 
   if (trebleVex.length > 0) {
     const sn = new StaveNote({ clef: "treble", keys: trebleVex.map(n => n.key), duration: "w" });
-    trebleVex.forEach((n, i) => { if (n.accidental) sn.addModifier(new Accidental(n.accidental), i); });
+    trebleVex.forEach((n, i) => {
+      sn.setKeyStyle(i, n.style);
+      if (n.accidental) sn.addModifier(new Accidental(n.accidental).setStyle(n.style), i);
+    });
     trebleVoice = new Voice({ num_beats: 4, beat_value: 4 }).addTickables([sn]);
     voices.push(trebleVoice);
   }
 
   if (bassVex.length > 0) {
     const sn = new StaveNote({ clef: "bass", keys: bassVex.map(n => n.key), duration: "w" });
-    bassVex.forEach((n, i) => { if (n.accidental) sn.addModifier(new Accidental(n.accidental), i); });
+    bassVex.forEach((n, i) => {
+      sn.setKeyStyle(i, n.style);
+      if (n.accidental) sn.addModifier(new Accidental(n.accidental).setStyle(n.style), i);
+    });
     bassVoice = new Voice({ num_beats: 4, beat_value: 4 }).addTickables([sn]);
     voices.push(bassVoice);
   }

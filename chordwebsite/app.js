@@ -350,6 +350,7 @@ midiStopBtn.addEventListener("click", () => {
   document.getElementById("midiNotation").innerHTML = "";
   lastMidiNotes = [];
   pedalHeldNotes = null;
+  releasedAt.clear();
 });
 
 document.getElementById("midiSelect").addEventListener("change", e => {
@@ -359,7 +360,34 @@ document.getElementById("midiSelect").addEventListener("change", e => {
 // Every note sounding under the sustain pedal (held at press + pressed since); null when pedal is up.
 let pedalHeldNotes = null;
 
+// Pedal fade: notes released under the pedal fade out on the staff only.
+const pedalFadeEl      = document.getElementById("pedalFade");
+const pedalFadeValueEl = document.getElementById("pedalFadeValue");
+let pedalFadeMs = +pedalFadeEl.value * 1000;
+const releasedAt = new Map(); // midi → performance.now() when released under pedal
+let fadeFrame = null;
+
+pedalFadeEl.addEventListener("input", () => {
+  pedalFadeMs = +pedalFadeEl.value * 1000;
+  pedalFadeValueEl.textContent = `${(+pedalFadeEl.value).toFixed(1)} s`;
+  if (midiRunning) renderMidiNotation();
+});
+
+function noteOpacity(midi) {
+  const t = releasedAt.get(midi);
+  if (t === undefined) return 1;
+  return Math.max(0, 1 - (performance.now() - t) / pedalFadeMs);
+}
+
 function onMidiNotesChange(midiNotes, sustainDown = false) {
+  const now = performance.now();
+  if (sustainDown) {
+    for (const m of lastMidiNotes) if (!midiNotes.includes(m)) releasedAt.set(m, now);
+    for (const m of midiNotes) releasedAt.delete(m);
+  } else {
+    releasedAt.clear();
+  }
+
   lastMidiNotes = midiNotes;
   drawPiano(midiPianoRoll, midiNotes);
 
@@ -368,6 +396,15 @@ function onMidiNotesChange(midiNotes, sustainDown = false) {
     : null;
 
   renderMidiDisplay();
+}
+
+function renderMidiNotation() {
+  renderGrandStaffNotation(pedalHeldNotes ?? lastMidiNotes, accidentalPreference, noteOpacity);
+
+  const stillFading = [...releasedAt.keys()].some(m => noteOpacity(m) > 0);
+  if (stillFading && fadeFrame === null) {
+    fadeFrame = setTimeout(() => { fadeFrame = null; renderMidiNotation(); }, 50);
+  }
 }
 
 function renderMidiDisplay() {
@@ -379,7 +416,7 @@ function renderMidiDisplay() {
     midiNotesEl.textContent = "";
     midiNotesDetEl.style.visibility = "hidden";
     midiStatusEl.textContent = "Play notes on your keyboard.";
-    renderGrandStaffNotation([], accidentalPreference);
+    renderMidiNotation();
     return;
   }
 
@@ -399,5 +436,5 @@ function renderMidiDisplay() {
     ? "Held by sustain pedal"
     : (chord ? "Chord detected!" : "Listening…");
 
-  renderGrandStaffNotation(midiNotes, accidentalPreference);
+  renderMidiNotation();
 }

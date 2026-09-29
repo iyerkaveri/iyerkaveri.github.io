@@ -292,6 +292,25 @@ button:disabled { opacity: 0.4; cursor: default; }
   display: flex;
 }
 
+/* ── Pedal fade slider ── */
+.fade-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.fade-row input[type="range"] {
+  width: 160px;
+  accent-color: var(--green-dark);
+}
+.fade-value {
+  min-width: 3.2em;
+  color: var(--text-main);
+  font-variant-numeric: tabular-nums;
+}
+
 /* ── Theme toggle button ───────────────────────────────────────────────────── */
 .theme-toggle {
   position: fixed;
