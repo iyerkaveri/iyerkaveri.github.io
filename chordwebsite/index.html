@@ -6,7 +6,7 @@
   <title>Chord Analyzer</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Jost:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -94,5 +94,18 @@
   <script src="midiInput.js"></script>
   <script src="keyAnalysis.js"></script>
   <script src="app.js"></script>
+
+  <button id="themeToggle" class="theme-toggle" title="Swap theme">
+    <span id="themeToggleIcon" class="swap-arrow swap-arrow--blue">↻</span>
+    <span>Swap theme</span>
+  </button>
+  <script>
+    const themeToggle = document.getElementById('themeToggle');
+    const themeIcon   = document.getElementById('themeToggleIcon');
+    themeToggle.addEventListener('click', () => {
+      const isBoss = document.documentElement.classList.toggle('boss-theme');
+      themeIcon.className = isBoss ? 'swap-arrow swap-arrow--green' : 'swap-arrow swap-arrow--blue';
+    });
+  </script>
 </body>
 </html>

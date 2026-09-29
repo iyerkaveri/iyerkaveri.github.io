@@ -7,6 +7,40 @@
   --tan-border: #E3D6A4;
   --text-main: #3A3424;
   --text-muted: #8A8266;
+  /* Piano canvas colors — read by drawPiano() */
+  --piano-white-lit: #6EA763;
+  --piano-black-lit: #4F7E47;
+  --piano-white-bg:  #FFFBEF;
+  --piano-black-bg:  #3A3424;
+  --piano-border:    #E3D6A4;
+}
+
+/* ── Boss theme ────────────────────────────────────────────────────────────── */
+html.boss-theme {
+  --cream:       #F0F4F8;
+  --cream-light: #FFFFFF;
+  --green:       #3B82F6;
+  --green-dark:  #2563EB;
+  --green-deep:  #1D4ED8;
+  --tan-border:  #CBD5E1;
+  --text-main:   #0F172A;
+  --text-muted:  #64748B;
+  --piano-white-lit: #3B82F6;
+  --piano-black-lit: #1D4ED8;
+  --piano-white-bg:  #F8FAFC;
+  --piano-black-bg:  #1E293B;
+  --piano-border:    #CBD5E1;
+}
+html.boss-theme body {
+  font-family: "Jost", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+html.boss-theme button {
+  font-family: "Jost", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+html.boss-theme select,
+html.boss-theme input,
+html.boss-theme label {
+  font-family: "Jost", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 * {
@@ -257,4 +291,40 @@ button:disabled { opacity: 0.4; cursor: default; }
 .tab-panel.active {
   display: flex;
 }
+
+/* ── Theme toggle button ───────────────────────────────────────────────────── */
+.theme-toggle {
+  position: fixed;
+  bottom: 1.25rem;
+  right: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 20px;
+  border: 1.5px solid var(--tan-border);
+  background: var(--cream-light);
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  transition: border-color 0.15s, color 0.15s, box-shadow 0.15s, background 0.15s;
+  z-index: 100;
+}
+.theme-toggle:hover {
+  border-color: var(--green-dark);
+  color: var(--text-main);
+  box-shadow: 0 3px 12px rgba(0,0,0,0.13);
+}
+.theme-toggle:active { transform: scale(0.97); }
+.swap-arrow {
+  font-size: 1rem;
+  line-height: 1;
+  display: inline-block;
+}
+.swap-arrow--blue  { color: #2563EB; }
+.swap-arrow--green { color: #4F7E47; }
 

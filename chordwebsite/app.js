@@ -119,15 +119,22 @@ function drawPiano(canvas, highlightedMidi) {
   const bh = H * 0.64;
   const lit = new Set(highlightedMidi);
 
+  const cs = getComputedStyle(document.documentElement);
+  const whiteLit = cs.getPropertyValue("--piano-white-lit").trim();
+  const blackLit = cs.getPropertyValue("--piano-black-lit").trim();
+  const whiteBg  = cs.getPropertyValue("--piano-white-bg").trim();
+  const blackBg  = cs.getPropertyValue("--piano-black-bg").trim();
+  const border   = cs.getPropertyValue("--piano-border").trim();
+
   ctx.clearRect(0, 0, W, H);
 
   // White keys
   for (let m = PIANO_LOW; m <= PIANO_HIGH; m++) {
     if (!IS_WHITE[m % 12]) continue;
     const x = pianoKeyX(m, kw);
-    ctx.fillStyle = lit.has(m) ? "#6EA763" : "#FFFBEF";
+    ctx.fillStyle = lit.has(m) ? whiteLit : whiteBg;
     ctx.fillRect(x + 0.5, 0.5, kw - 1, H - 1);
-    ctx.strokeStyle = "#E3D6A4";
+    ctx.strokeStyle = border;
     ctx.lineWidth = 1;
     ctx.strokeRect(x + 0.5, 0.5, kw - 1, H - 1);
   }
@@ -136,7 +143,7 @@ function drawPiano(canvas, highlightedMidi) {
   for (let m = PIANO_LOW; m <= PIANO_HIGH; m++) {
     if (IS_WHITE[m % 12]) continue;
     const x = pianoKeyX(m, kw);
-    ctx.fillStyle = lit.has(m) ? "#4F7E47" : "#3A3424";
+    ctx.fillStyle = lit.has(m) ? blackLit : blackBg;
     ctx.fillRect(x, 0, bw, bh);
   }
 }
@@ -340,7 +347,7 @@ midiStopBtn.addEventListener("click", () => {
   midiChordEl.textContent = "";
   midiRomanEl.textContent = "";
   midiNotesEl.textContent = "";
-  midiStatusEl.textContent = 'Click "Start Analyzing" to begin.';
+  midiStatusEl.textContent = "Click "Start Analyzing" to begin.";
   document.getElementById("midiNotation").innerHTML = "";
   lastMidiNotes = [];
 });
