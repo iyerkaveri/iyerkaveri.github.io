@@ -356,15 +356,16 @@ document.getElementById("midiSelect").addEventListener("change", e => {
   connectMidiInput(e.target.value);
 });
 
-// Notes captured at sustain-pedal press; while set, the display ignores live keys.
+// Every note sounding under the sustain pedal (held at press + pressed since); null when pedal is up.
 let pedalHeldNotes = null;
 
 function onMidiNotesChange(midiNotes, sustainDown = false) {
   lastMidiNotes = midiNotes;
   drawPiano(midiPianoRoll, midiNotes);
 
-  if (sustainDown && !pedalHeldNotes) pedalHeldNotes = midiNotes;
-  if (!sustainDown) pedalHeldNotes = null;
+  pedalHeldNotes = sustainDown
+    ? [...new Set([...(pedalHeldNotes ?? []), ...midiNotes])].sort((a, b) => a - b)
+    : null;
 
   renderMidiDisplay();
 }
