@@ -347,7 +347,7 @@ midiStopBtn.addEventListener("click", () => {
   midiChordEl.textContent = "";
   midiRomanEl.textContent = "";
   midiNotesEl.textContent = "";
-  midiStatusEl.textContent = "Click "Start Analyzing" to begin.";
+  midiStatusEl.textContent = 'Click "Start Analyzing" to begin.';
   document.getElementById("midiNotation").innerHTML = "";
   lastMidiNotes = [];
 });
