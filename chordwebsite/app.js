@@ -78,9 +78,8 @@ keySelectEl.addEventListener("change", () => {
     selectedKey = { pc: +pc, mode };
   }
   if (lastNotes)            renderResult(lastNotes);
-  if (lastMidiNotes.length) onMidiNotesChange(lastMidiNotes);
+  if (midiRunning)          renderMidiDisplay();
   if (!lastNotes)           micRomanEl.textContent = "";
-  if (!lastMidiNotes.length) midiRomanEl.textContent = "";
 });
 
 // ── Accidental preference ─────────────────────────────────────────────────────
@@ -92,7 +91,7 @@ function setAccidentalPreference(pref) {
   preferSharpBtn.classList.toggle("active", pref === "sharp");
   preferFlatBtn.classList.toggle("active",  pref === "flat");
   if (lastNotes)            renderResult(lastNotes);
-  if (lastMidiNotes.length) onMidiNotesChange(lastMidiNotes);
+  if (midiRunning)          renderMidiDisplay();
 }
 
 // ── Piano roll ────────────────────────────────────────────────────────────────
@@ -350,15 +349,28 @@ midiStopBtn.addEventListener("click", () => {
   midiStatusEl.textContent = 'Click "Start Analyzing" to begin.';
   document.getElementById("midiNotation").innerHTML = "";
   lastMidiNotes = [];
+  pedalHeldNotes = null;
 });
 
 document.getElementById("midiSelect").addEventListener("change", e => {
   connectMidiInput(e.target.value);
 });
 
-function onMidiNotesChange(midiNotes) {
+// Notes captured at sustain-pedal press; while set, the display ignores live keys.
+let pedalHeldNotes = null;
+
+function onMidiNotesChange(midiNotes, sustainDown = false) {
   lastMidiNotes = midiNotes;
   drawPiano(midiPianoRoll, midiNotes);
+
+  if (sustainDown && !pedalHeldNotes) pedalHeldNotes = midiNotes;
+  if (!sustainDown) pedalHeldNotes = null;
+
+  renderMidiDisplay();
+}
+
+function renderMidiDisplay() {
+  const midiNotes = pedalHeldNotes ?? lastMidiNotes;
 
   if (midiNotes.length === 0) {
     midiChordEl.textContent = "";
@@ -382,7 +394,9 @@ function onMidiNotesChange(midiNotes) {
   midiRomanEl.textContent = (chord && selectedKey)
     ? getRomanNumeral(chord, selectedKey.pc, selectedKey.mode)
     : "";
-  midiStatusEl.textContent = chord ? "Chord detected!" : "Listening…";
+  midiStatusEl.textContent = pedalHeldNotes
+    ? "Held by sustain pedal"
+    : (chord ? "Chord detected!" : "Listening…");
 
   renderGrandStaffNotation(midiNotes, accidentalPreference);
 }

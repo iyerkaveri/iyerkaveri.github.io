@@ -4,6 +4,7 @@
 let midiAccess = null;
 let selectedInput = null;
 const activeNotes = new Set(); // held midi note numbers
+let sustainDown = false;
 
 let onNotesChange = null;
 
@@ -60,7 +61,8 @@ async function connectMidiInput(deviceId) {
 
   selectedInput = newInput;
   activeNotes.clear();
-  if (onNotesChange) onNotesChange([]);
+  sustainDown = false;
+  if (onNotesChange) onNotesChange([], false);
   if (!selectedInput) return;
 
   await selectedInput.open();
@@ -78,12 +80,17 @@ function handleMidi(event) {
   } else if (cmd === 0xB0 && note === 123) {
     // All Notes Off
     activeNotes.clear();
+  } else if (cmd === 0xB0 && note === 64) {
+    // Sustain pedal (CC64): ≥64 is down; ignore half-pedal jitter that doesn't cross it.
+    const down = velocity >= 64;
+    if (down === sustainDown) return;
+    sustainDown = down;
   } else {
     // Clock, active sensing, etc. — don't fire change callback for these.
     return;
   }
 
-  if (onNotesChange) onNotesChange([...activeNotes].sort((a, b) => a - b));
+  if (onNotesChange) onNotesChange([...activeNotes].sort((a, b) => a - b), sustainDown);
 }
 
 function getMidiNotes() {
@@ -94,4 +101,5 @@ function stopMidi() {
   if (selectedInput) selectedInput.onmidimessage = null;
   selectedInput = null;
   activeNotes.clear();
+  sustainDown = false;
 }
