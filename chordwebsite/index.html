@@ -11,6 +11,7 @@
 </head>
 <body>
   <div class="app">
+   <div class="sidebar-top">
     <h1>Chord Analyzer</h1>
     <p class="subtitle">Play a chord on piano and we'll identify it.</p>
 
@@ -31,9 +32,11 @@
         </select>
       </div>
     </div>
+   </div>
 
     <!-- ── Microphone panel ── -->
     <div id="tab-mic" class="tab-panel active">
+     <div class="panel-controls">
       <div class="mic-select-row">
         <label for="micSelect">Microphone:</label>
         <select id="micSelect"></select>
@@ -47,6 +50,7 @@
       <div class="status-bar">
         <span id="statusText">Click "Start Listening" to begin.</span>
       </div>
+     </div>
 
       <div class="results" id="results" hidden>
         <div class="chord-name" id="chordName"></div>
@@ -61,6 +65,7 @@
 
     <!-- ── MIDI panel ── -->
     <div id="tab-midi" class="tab-panel">
+     <div class="panel-controls">
       <div class="controls">
         <button id="midiStartBtn" class="btn-primary">Start Analyzing</button>
         <button id="midiStopBtn" class="btn-secondary" disabled>Stop</button>
@@ -80,6 +85,7 @@
       <div class="status-bar">
         <span id="midiStatusText">Click "Start Analyzing" to begin.</span>
       </div>
+     </div>
 
       <div class="results" id="midiResults" style="display:none">
         <div class="chord-name" id="midiChordName"></div>

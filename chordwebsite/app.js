@@ -49,6 +49,10 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
       micTabInitialized = true;
       populateMicList();
     }
+    if (tab === "midi" && midiRunning) {
+      drawPiano(midiPianoRoll, lastMidiNotes);
+      renderMidiDisplay();
+    }
   });
 });
 

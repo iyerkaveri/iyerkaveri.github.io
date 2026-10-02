@@ -61,6 +61,14 @@ function toVexKey(noteName) {
   return `${letter.toLowerCase()}/${octave}`;
 }
 
+// Noteheads sit at a fixed distance past the clef, so accidentals grow leftward instead of pushing the chord right.
+const NOTE_ANCHOR = 45;
+function lockNoteX(staveNote, stave) {
+  staveNote.setStave(stave);
+  staveNote.setXShift(0);
+  staveNote.setXShift(stave.getNoteStartX() + NOTE_ANCHOR - staveNote.getAbsoluteX());
+}
+
 function drawStave(ctx, clef, y, width, noteList) {
   const stave = new Stave(20, y, width - 40);
   stave.addClef(clef);
@@ -86,6 +94,7 @@ function drawStave(ctx, clef, y, width, noteList) {
   const voice = new Voice({ num_beats: 4, beat_value: 4 });
   voice.addTickables([staveNote]);
   new Formatter().joinVoices([voice]).format([voice], width - 80);
+  lockNoteX(staveNote, stave);
   voice.draw(ctx, stave);
 }
 
@@ -106,6 +115,7 @@ function midiToVexNote(midi, preference) {
 // opacityOf(midi) → 0..1 lets sustained notes fade; fully faded notes are omitted.
 function renderGrandStaffNotation(midiNotes, preference, opacityOf = () => 1) {
   const container = document.getElementById("midiNotation");
+  if (!container.parentElement?.clientWidth) return; // hidden tab; redrawn when shown
   container.innerHTML = "";
 
   const toStyled = m => {
@@ -163,6 +173,9 @@ function renderGrandStaffNotation(midiNotes, preference, opacityOf = () => 1) {
   const formatter = new Formatter();
   voices.forEach(v => formatter.joinVoices([v]));
   formatter.format(voices, width - 80);
+
+  if (trebleVoice) lockNoteX(trebleVoice.getTickables()[0], trebleStave);
+  if (bassVoice)   lockNoteX(bassVoice.getTickables()[0], bassStave);
 
   if (trebleVoice) trebleVoice.draw(ctx, trebleStave);
   if (bassVoice)   bassVoice.draw(ctx, bassStave);
