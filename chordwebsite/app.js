@@ -95,57 +95,87 @@ function setAccidentalPreference(pref) {
 }
 
 // ── Piano roll ────────────────────────────────────────────────────────────────
-const PIANO_LOW  = 36;  // C2
-const PIANO_HIGH = 96;  // C7
+const PIANO_LOW  = 21;   // A0
+const PIANO_HIGH = 108;  // C8
+const MIDDLE_C   = 60;
 const IS_WHITE   = [true,false,true,false,true,true,false,true,false,true,false,true];
-// Left-edge x in white-key units for each pitch class within an octave
-const PC_X       = [0, 0.65, 1, 1.65, 2, 3, 3.65, 4, 4.65, 5, 5.65, 6];
-const NUM_WHITE  = 36; // C2 through C7 inclusive
+const WHITE_LETTERS = ["C",,"D",,"E","F",,"G",,"A",,"B"];
 
-function pianoKeyX(midi, kw) {
-  const oct = Math.floor((midi - PIANO_LOW) / 12);
-  return (oct * 7 + PC_X[midi % 12]) * kw;
+// White-key index of each white key, and for each black key the index of the white key to its right.
+const WHITE_INDEX = {};
+let NUM_WHITE = 0;
+for (let m = PIANO_LOW; m <= PIANO_HIGH; m++) {
+  WHITE_INDEX[m] = NUM_WHITE;
+  if (IS_WHITE[m % 12]) NUM_WHITE++;
 }
 
 function drawPiano(canvas, highlightedMidi) {
-  const W = canvas.offsetWidth;
+  const W = canvas.clientWidth;
+  const H = canvas.clientHeight;
   if (!W) return;
-  canvas.width = W;
-  const H = canvas.height;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width  = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
   const ctx = canvas.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
   const kw = W / NUM_WHITE;
-  const bw = kw * 0.55;
-  const bh = H * 0.64;
+  const bw = kw * 0.6;
+  const bh = H * 0.6;
   const lit = new Set(highlightedMidi);
 
   const cs = getComputedStyle(document.documentElement);
-  const whiteLit = cs.getPropertyValue("--piano-white-lit").trim();
-  const blackLit = cs.getPropertyValue("--piano-black-lit").trim();
-  const whiteBg  = cs.getPropertyValue("--piano-white-bg").trim();
-  const blackBg  = cs.getPropertyValue("--piano-black-bg").trim();
-  const border   = cs.getPropertyValue("--piano-border").trim();
+  const v = name => cs.getPropertyValue(name).trim();
+  const font = getComputedStyle(document.body).fontFamily;
 
   ctx.clearRect(0, 0, W, H);
 
-  // White keys
+  // White keys, with letter names along the bottom (octave number on every C).
+  const labelSize = Math.max(6, Math.min(9, kw * 0.75));
+  ctx.textAlign = "center";
+  ctx.textBaseline = "alphabetic";
+  ctx.font = `700 ${labelSize}px ${font}`;
   for (let m = PIANO_LOW; m <= PIANO_HIGH; m++) {
     if (!IS_WHITE[m % 12]) continue;
-    const x = pianoKeyX(m, kw);
-    ctx.fillStyle = lit.has(m) ? whiteLit : whiteBg;
+    const x = WHITE_INDEX[m] * kw;
+    const on = lit.has(m);
+    ctx.fillStyle = on ? v("--piano-white-lit") : v("--piano-white-bg");
     ctx.fillRect(x + 0.5, 0.5, kw - 1, H - 1);
-    ctx.strokeStyle = border;
+    ctx.strokeStyle = v("--piano-border");
     ctx.lineWidth = 1;
     ctx.strokeRect(x + 0.5, 0.5, kw - 1, H - 1);
+
+    const isC = m % 12 === 0;
+    const label = WHITE_LETTERS[m % 12] + (isC ? Math.floor(m / 12) - 1 : "");
+    ctx.fillStyle = on ? v("--piano-label-lit") : (isC ? v("--piano-label-c") : v("--piano-label"));
+    // C labels get the room under the black-key line; other letters only when keys are wide enough.
+    if (isC || kw >= 9) {
+      if (isC && kw < 14) ctx.font = `800 ${labelSize * 0.85}px ${font}`;
+      ctx.fillText(label, x + kw / 2, H - 4);
+      ctx.font = `700 ${labelSize}px ${font}`;
+    }
+
+    if (m === MIDDLE_C) {
+      ctx.fillStyle = on ? v("--piano-label-lit") : v("--piano-middle-c");
+      ctx.beginPath();
+      ctx.arc(x + kw / 2, bh + (H - bh) * 0.35, Math.max(2, kw * 0.22), 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 
-  // Black keys on top
+  // Black keys on top, centred over the boundary with the next white key.
   for (let m = PIANO_LOW; m <= PIANO_HIGH; m++) {
     if (IS_WHITE[m % 12]) continue;
-    const x = pianoKeyX(m, kw);
-    ctx.fillStyle = lit.has(m) ? blackLit : blackBg;
+    const x = WHITE_INDEX[m] * kw - bw / 2;
+    ctx.fillStyle = lit.has(m) ? v("--piano-black-lit") : v("--piano-black-bg");
     ctx.fillRect(x, 0, bw, bh);
   }
 }
+
+window.addEventListener("resize", () => {
+  drawPiano(micPianoRoll, lastNotes ? lastNotes.map(n => n.midi) : []);
+  drawPiano(midiPianoRoll, lastMidiNotes);
+});
 
 // ── Microphone ────────────────────────────────────────────────────────────────
 let audioCtx, analyser, sourceNode, animFrame, currentStream;
@@ -295,7 +325,7 @@ function renderResult(notes) {
     statusEl.textContent = "Chord detected!";
     renderChordNotation(chord);
   } else if (notes.length >= 2) {
-    chordEl.textContent = "?";
+    chordEl.textContent = "";
     micRomanEl.textContent = "";
     notesEl.textContent = toMusicSymbols(displayNames.join(", "));
     micNotesDetEl.style.visibility = "visible";
@@ -426,9 +456,7 @@ function renderMidiDisplay() {
   const names = midiNotes.map(m => toMusicSymbols(midiToNoteName(m, accidentalPreference)));
 
   midiNotesEl.textContent = names.join(", ");
-  midiChordEl.textContent = chord
-    ? toMusicSymbols(chord.chord)
-    : (midiNotes.length >= 2 ? "?" : "");
+  midiChordEl.textContent = chord ? toMusicSymbols(chord.chord) : "";
   midiRomanEl.textContent = (chord && selectedKey)
     ? getRomanNumeral(chord, selectedKey.pc, selectedKey.mode)
     : "";

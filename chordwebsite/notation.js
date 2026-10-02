@@ -118,14 +118,15 @@ function renderGrandStaffNotation(midiNotes, preference, opacityOf = () => 1) {
   const bassVex   = visible.filter(m => m < 60).map(toStyled);
 
   const width = Math.min((container.parentElement?.clientWidth ?? 500) - 40, 500);
-  const height = 230;
+  // Fixed height with headroom for the full piano range (C8 above, A0 below) so the layout never shifts.
+  const height = 340;
 
   const renderer = new Renderer(container, Renderer.Backends.SVG);
   renderer.resize(width, height);
   const ctx = renderer.getContext();
 
-  const trebleStave = new Stave(20, 10,  width - 40).addClef("treble").setContext(ctx).draw();
-  const bassStave   = new Stave(20, 120, width - 40).addClef("bass").setContext(ctx).draw();
+  const trebleStave = new Stave(20, 65,  width - 40).addClef("treble").setContext(ctx).draw();
+  const bassStave   = new Stave(20, 175, width - 40).addClef("bass").setContext(ctx).draw();
 
   new StaveConnector(trebleStave, bassStave)
     .setType(StaveConnector.type.BRACE).setContext(ctx).draw();
