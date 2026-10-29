@@ -62,11 +62,11 @@ function toVexKey(noteName) {
 }
 
 // Noteheads sit at a fixed distance past the clef, so accidentals grow leftward instead of pushing the chord right.
-const NOTE_ANCHOR = 45;
+// Moves the stave's note-start (not the note) so accidentals stay attached to their noteheads.
+const NOTEHEAD_X = 97; // px from the SVG's left edge
 function lockNoteX(staveNote, stave) {
   staveNote.setStave(stave);
-  staveNote.setXShift(0);
-  staveNote.setXShift(stave.getNoteStartX() + NOTE_ANCHOR - staveNote.getAbsoluteX());
+  stave.setNoteStartX(stave.getNoteStartX() + NOTEHEAD_X - staveNote.getAbsoluteX());
 }
 
 function drawStave(ctx, clef, y, width, noteList) {
