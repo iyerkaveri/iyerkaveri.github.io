@@ -22,6 +22,7 @@ const CHORD_PATTERNS = [
   { tones: [{semitone:0,step:0},{semitone:2,step:1},{semitone:4,step:2},{semitone:7,step:4}],                    suffix: "add2"    },
   { tones: [{semitone:0,step:0},{semitone:2,step:1},{semitone:3,step:2},{semitone:7,step:4}],                    suffix: "madd2"   },
   { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:5,step:3},{semitone:7,step:4}],                    suffix: "add4"    },
+  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:5,step:3},{semitone:7,step:4}],                    suffix: "madd4"   },
 
   // ── 6ths ──────────────────────────────────────────────────────────────────
   { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:9,step:5}],                    suffix: "6"       },
@@ -34,7 +35,8 @@ const CHORD_PATTERNS = [
   { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:11,step:6}],                   suffix: "mM7"     },
   { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:6,step:4},{semitone:10,step:6}],                   suffix: "m7b5"    },
   { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:6,step:4},{semitone:9, step:6}],                   suffix: "dim7"    },
-  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:8,step:4},{semitone:10,step:6}],                   suffix: "aug7"    },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:8,step:4},{semitone:10,step:6}],                   suffix: "7#5"     },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:8,step:4},{semitone:11,step:6}],                   suffix: "maj7#5"  },
   { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:6,step:4},{semitone:10,step:6}],                   suffix: "7b5"     },
   { tones: [{semitone:0,step:0},{semitone:5,step:3},{semitone:7,step:4},{semitone:10,step:6}],                                          suffix: "7sus4"       },
   { tones: [{semitone:0,step:0},{semitone:2,step:1},{semitone:7,step:4},{semitone:10,step:6}],                                          suffix: "7sus2"       },
@@ -54,6 +56,13 @@ const CHORD_PATTERNS = [
   // semitone 18 = #11 (step 10), 17 = 11th
   { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:18,step:10}], suffix: "7#11" },
   { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:17,step:10}], suffix: "m11"  },
+  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:11,step:6},{semitone:14,step:8}], suffix: "mM9"  },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:11,step:6},{semitone:18,step:10}], suffix: "maj7#11" },
+  // 11ths (with 9th) — listed after the 9ths so a plain 9th voicing wins the tie.
+  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:14,step:8},{semitone:17,step:10}], suffix: "m11"     },
+  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:11,step:6},{semitone:14,step:8},{semitone:17,step:10}], suffix: "mM11"    },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:11,step:6},{semitone:14,step:8},{semitone:17,step:10}], suffix: "maj11"   },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:11,step:6},{semitone:14,step:8},{semitone:18,step:10}], suffix: "maj9#11" },
 
   // ── 6/9 chords ────────────────────────────────────────────────────────────
   // semitone 9 = 6th (step 5), semitone 14 = 9th (step 8)
@@ -73,6 +82,9 @@ const CHORD_PATTERNS = [
   { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:21,step:12}], suffix: "13"    },
   { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:11,step:6},{semitone:21,step:12}], suffix: "maj13" },
   { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:21,step:12}], suffix: "m13"   },
+  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:11,step:6},{semitone:14,step:8},{semitone:21,step:12}], suffix: "mM13" },
+  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:11,step:6},{semitone:21,step:12}], suffix: "mM13" },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:11,step:6},{semitone:14,step:8},{semitone:18,step:10},{semitone:21,step:12}], suffix: "maj13#11" },
 
   // ── Altered dominants (b9/♯9 with b5 or #5) ──────────────────────────────
   { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:6,step:4},{semitone:10,step:6},{semitone:13,step:8}], suffix: "7b5b9"  },
@@ -96,6 +108,9 @@ const CHORD_PATTERNS = [
 // Derive flat semitone-interval list (mod 12) for matching logic.
 for (const pattern of CHORD_PATTERNS) {
   pattern.intervals = pattern.tones.map(t => t.semitone % 12);
+  // 7th chords and above don't need their perfect 5th.
+  pattern.fifthOptional = pattern.intervals.includes(7) &&
+    (pattern.intervals.includes(10) || pattern.intervals.includes(11));
 }
 
 function matchScore(patternIntervals, detectedPCs, root) {
@@ -124,7 +139,8 @@ function recognizeChord(notes, preference = "sharp") {
     if (!pcs.includes(root)) continue;
     for (const pattern of CHORD_PATTERNS) {
       const score = matchScore(pattern.intervals, pcs, root);
-      const coverage = score / pattern.intervals.length;
+      const fifthMissing = pattern.fifthOptional && !pcs.includes((root + 7) % 12);
+      const coverage = score / (pattern.intervals.length - (fifthMissing ? 1 : 0));
       // On a tie, prefer the interpretation whose root is the bass note
       // (e.g. C6 vs Am7 with the same 4 pitch classes — bass decides).
       const bassWins = score === bestScore && root === bassPC && bestMatch?.rootPC !== bassPC;

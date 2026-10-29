@@ -59,7 +59,7 @@ function getRomanNumeral(chord, keyPC, keyMode) {
   const isMinor = sfx.startsWith("m") && !sfx.startsWith("maj");
   // Full diminished (shows °); half-diminished (m7b5) is minor, not °.
   const isDim   = sfx === "dim" || sfx === "dim7";
-  const isAug   = sfx === "aug" || sfx === "aug7";
+  const isAug   = sfx === "aug";
 
   // Case: minor/dim → lowercase, major/aug/sus/power → uppercase.
   let numeral = (isMinor || isDim) ? letters.toLowerCase() : letters;
@@ -74,10 +74,12 @@ function getRomanNumeral(chord, keyPC, keyMode) {
     "7sus4":    "7sus4",  "7sus2":  "7sus2",  "7sus2sus4":   "7sus2sus4",
     "maj7sus4": "maj7sus4","maj7sus2":"maj7sus2","maj7sus2sus4":"maj7sus2sus4",
     "13sus4":   "13sus4",
-    "add2":     "add2",   "madd2":  "add2",   "add4":   "add4",
+    "add2":     "add2",   "madd2":  "add2",   "add4":   "add4",   "madd4":  "add4",
     "6":        "6",      "m6":     "6",      "6/9":    "6/9",    "m6/9":   "6/9",
     "maj7":     "maj7",   "7":      "7",      "m7":     "7",     "mM7":    "maj7",
-    "m7b5":     "7♭5",    "dim7":   "7",      "aug7":   "7",     "7b5":    "7♭5",
+    "m7b5":     "7♭5",    "dim7":   "7",      "7#5":    "7♯5",   "7b5":    "7♭5",
+    "maj7#5":   "maj7♯5", "maj7#11": "maj7♯11", "maj9#11": "maj9♯11", "maj13#11": "maj13♯11",
+    "maj11":    "maj11",  "mM9":    "maj9",   "mM11":   "maj11", "mM13":   "maj13",
     "9":        "9",      "maj9":   "maj9",   "m9":     "9",
     "7b9":      "7♭9",    "7#9":    "7♯9",    "7#11":   "7♯11",  "m11":    "11",
     "13":       "13",     "maj13":  "maj13",  "m13":    "13",
