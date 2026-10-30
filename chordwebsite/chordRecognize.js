@@ -258,13 +258,13 @@ function quartalMatch(seq, pcs, bassPC, names) {
 
 // ── Polychords ────────────────────────────────────────────────────────────────
 // A lower chord rooted on the bass (major or minor triad, or a power chord) under a complete chord
-// above it (major, minor, diminished or augmented triad, or a maj7, dominant 7 or m7) that adds at
-// least one note; together they cover every played note. C C♯ E F♯ G A is F♯m over C.
+// on a different root above it (major, minor, diminished or augmented triad, or a maj7, dominant 7
+// or m7) that adds at least one note; together they cover every played note. C C♯ E F♯ G A is F♯m over C.
 // POLY_REPLACES sets which single-chord names a polychord may replace:
 //   "none"          only notes that would otherwise get no name
 //   "extendedSlash" also slash chords whose upper chord has a 9th, 11th or 13th (A13♯9/C → F♯m over C)
 //   "anySlash"      also any other slash chord
-const POLY_REPLACES = "none";
+const POLY_REPLACES = "extendedSlash";
 const POLY_BOTTOM = ["", "m", "5"];
 const POLY_TOP    = ["", "m", "dim", "aug", "maj7", "7", "m7"];
 
@@ -277,6 +277,7 @@ function polychord(pcs, bassPC, names) {
     if (!bottom.every(pc => pcs.includes(pc))) continue;
     for (const tSuffix of POLY_TOP) {
       for (let root = 0; root < 12; root++) {
+        if (root === bassPC) continue;   // the two chords never share a root (no Cdim over C)
         const top = chordPCs(root, patternFor(tSuffix));
         if (!top.every(pc => pcs.includes(pc))) continue;
         if (!pcs.every(pc => bottom.includes(pc) || top.includes(pc))) continue;
