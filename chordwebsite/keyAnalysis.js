@@ -120,6 +120,15 @@ function augmentedSixth(midis, keyPC) {
   return AUG_SIXTHS[ivs.join(",")] ?? null;
 }
 
+// An augmented 6th chord's notes are spelled from the key, so the 6th itself shows: A♭ C E♭ F♯ in C.
+const AUG6_DEGREES = { 8: { semitone: 8, step: 5 }, 0: { semitone: 0, step: 0 }, 2: { semitone: 2, step: 1 },
+                       3: { semitone: 3, step: 2 }, 6: { semitone: 6, step: 3 } };
+function spellAugmentedSixthNote(midi, keyPC, keyMode) {
+  const tonic = ALL_KEYS.find(k => k.pc === keyPC && k.mode === keyMode).label.split(" ")[0]
+    .replace("♯", "#").replace("♭", "b");
+  return withOctave(spellDegree(tonic, AUG6_DEGREES[(midi - keyPC + 120) % 12]), midi);
+}
+
 // The figured-bass numbers for an inverted chord, top to bottom (["6", "5"]), or null.
 function figuredBass(chord) {
   if (!chord.bassName || !chord.tones) return null;

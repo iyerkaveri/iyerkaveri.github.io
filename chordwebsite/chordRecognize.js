@@ -295,8 +295,13 @@ function spellPlayedNote(midi, chord, preference = "sharp") {
     const tone = part.tones.find(t => t.semitone % 12 === (pc - part.rootPC + 12) % 12);
     if (tone) { name = spellDegree(part.root, tone); break; }
   }
+  return withOctave(name, midi);
+}
+
+// Add the octave to a note name spelled for this midi note: ("B#", 60) → "B#3".
+function withOctave(name, midi) {
   const natural = LETTER_PCS[LETTER_NAMES.indexOf(name[0])];
-  const acc = ((pc - natural) % 12 + 18) % 12 - 6;
+  const acc = ((midi % 12 - natural) % 12 + 18) % 12 - 6;
   return name + (Math.round((midi - acc - natural) / 12) - 1);
 }
 

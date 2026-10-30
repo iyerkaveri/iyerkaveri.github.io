@@ -333,6 +333,12 @@ function showChordName(el, chord) {
   el.appendChild(stack);
 }
 
+// Name a played note by its place in the chord, or by its place in the key for an augmented 6th.
+function spellNote(midi, chord, midis) {
+  if (selectedKey && augmentedSixth(midis, selectedKey.pc)) return spellAugmentedSixthNote(midi, selectedKey.pc, selectedKey.mode);
+  return spellPlayedNote(midi, chord, accidentalPreference);
+}
+
 // Roman numeral with any figured bass stacked after it: V⁶₅(♭9).
 function showRomanNumeral(el, chord, midis) {
   el.textContent = "";
@@ -355,7 +361,7 @@ function showRomanNumeral(el, chord, midis) {
 
 function renderResult(notes) {
   const chord = recognizeChord(notes, accidentalPreference);
-  const displayNames = notes.map(n => spellPlayedNote(n.midi, chord, accidentalPreference));
+  const displayNames = notes.map(n => spellNote(n.midi, chord, notes.map(x => x.midi)));
 
   if (chord) {
     showChordName(chordEl, chord);
@@ -471,7 +477,7 @@ function onMidiNotesChange(midiNotes, sustainDown = false) {
 function renderMidiNotation() {
   const midiNotes = pedalHeldNotes ?? lastMidiNotes;
   const chord = midiNotes.length ? recognizeChord(midiNotes.map(m => ({ midi: m })), accidentalPreference) : null;
-  renderGrandStaffNotation(midiNotes, m => spellPlayedNote(m, chord, accidentalPreference), noteOpacity);
+  renderGrandStaffNotation(midiNotes, m => spellNote(m, chord, midiNotes), noteOpacity);
 
   const stillFading = [...releasedAt.keys()].some(m => noteOpacity(m) > 0);
   if (stillFading && fadeFrame === null) {
@@ -495,7 +501,7 @@ function renderMidiDisplay() {
   midiNotesDetEl.style.visibility = "visible";
   const noteObjs = midiNotes.map(m => ({ midi: m }));
   const chord = recognizeChord(noteObjs, accidentalPreference);
-  const names = midiNotes.map(m => toMusicSymbols(spellPlayedNote(m, chord, accidentalPreference)));
+  const names = midiNotes.map(m => toMusicSymbols(spellNote(m, chord, midiNotes)));
 
   midiNotesEl.textContent = names.join(", ");
   showChordName(midiChordEl, chord);
