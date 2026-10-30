@@ -272,6 +272,18 @@ function recognizeChord(notes, preference = "sharp") {
   const sortedByMidi = [...notes].sort((a, b) => a.midi - b.midi);
   const bassPC = sortedByMidi[0].midi % 12;
 
+  // Two different notes: a tritone is "TT", a minor 7th names its dominant 7th (C–B♭ C7, B♭–C C7/B♭),
+  // and a major 7th above the bass names its maj7 (C–B Cmaj7; B–C stays unnamed).
+  if (pcs.length === 2) {
+    const up = (pcs.find(pc => pc !== bassPC) - bassPC + 12) % 12;
+    if (up === 6) return { root: names[bassPC], rootPC: bassPC, suffix: "TT", chord: "TT", intervals: [0, 6],
+                           tones: [{ semitone: 0, step: 0 }, { semitone: 6, step: 3 }] };
+    const dyad = suffix => CHORD_PATTERNS.find(p => p.suffix === suffix);
+    if (up === 10) return makeMatch(bassPC, dyad("7"), bassPC, names);
+    if (up === 2)  return makeMatch((bassPC + 2) % 12, dyad("7"), bassPC, names);
+    if (up === 11) return makeMatch(bassPC, dyad("maj7"), bassPC, names);
+  }
+
   if (pcs.length >= 3) {
     const seq = quartalStack(pcs, bassPC);
     if (seq) return quartalMatch(seq, pcs, bassPC, names);
