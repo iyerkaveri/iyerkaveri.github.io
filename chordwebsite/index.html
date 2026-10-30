@@ -7,6 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Jost:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link id="favicon" rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -114,9 +115,11 @@
   <script>
     const themeToggle = document.getElementById('themeToggle');
     const themeIcon   = document.getElementById('themeToggleIcon');
+    const favicon     = document.getElementById('favicon');
     themeToggle.addEventListener('click', () => {
       const isBoss = document.documentElement.classList.toggle('boss-theme');
       themeIcon.className = isBoss ? 'swap-arrow swap-arrow--green' : 'swap-arrow swap-arrow--blue';
+      favicon.href = isBoss ? '/favicon-blue.svg' : '/favicon.svg';
     });
   </script>
 </body>
