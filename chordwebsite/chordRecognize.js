@@ -276,7 +276,8 @@ function recognizeChord(notes, preference = "sharp") {
                         complete: score === pattern.intervals.length });
     }
   });
-  if (candidates.length === 0) return null;
+  // No name at all beats a name that ignores a played note (C D♭ D E♭ is not Cmadd2).
+  if (!candidates.some(c => c.explainsAll)) return null;
 
   // Rank: explains every note > more matched tones > nothing missing > bass is a chord tone (C7/B♭ over C/B♭)
   //       > root in the bass (C6 vs Am7) > root closest above the bass (same answer in every key) > list order.
