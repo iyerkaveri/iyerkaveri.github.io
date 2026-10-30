@@ -51,6 +51,7 @@ const CHORD_PATTERNS = [
   { tones: [{semitone:0,step:0},{semitone:2,step:1},{semitone:7,step:4},{semitone:11,step:6}],                                          suffix: "maj7sus2"    },
   { tones: [{semitone:0,step:0},{semitone:2,step:1},{semitone:5,step:3},{semitone:7,step:4},{semitone:11,step:6}],                       suffix: "maj7sus2sus4"},
   { tones: [{semitone:0,step:0},{semitone:5,step:3},{semitone:7,step:4},{semitone:10,step:6},{semitone:21,step:12}],                     suffix: "13sus4"      },
+  { tones: [{semitone:0,step:0},{semitone:5,step:3},{semitone:7,step:4},{semitone:10,step:6},{semitone:14,step:8},{semitone:21,step:12}], suffix: "13sus4", need: [9] }, // 9th optional
 
   // ── 9ths ──────────────────────────────────────────────────────────────────
   // semitone 14 = 9th (step 8), 13 = b9, 15 = #9
@@ -291,8 +292,9 @@ function recognizeChord(notes, preference = "sharp") {
   candidates.sort(rank);
   let best = candidates[0];
 
-  // A sus reading of the bass gives way to a complete triad/7th above it (C D F B♭ → B♭/C).
-  const isSus = !best.pattern.tones.some(t => t.step === 2);
+  // A sus reading of the bass gives way to a complete triad/7th above it (C D F B♭ → B♭/C),
+  // except a 13sus4, which keeps its name (C F A B♭ D is C13sus4, not B♭maj7/C).
+  const isSus = !best.pattern.tones.some(t => t.step === 2) && best.pattern.suffix !== "13sus4";
   if (best.root === bassPC && isSus) {
     const upper = candidates.find(c => c.root !== bassPC && c.complete && c.explainsAll && TERTIAN.has(c.pattern.suffix));
     if (upper) best = upper;
