@@ -235,6 +235,8 @@ function recognizeChord(notes, preference = "sharp") {
 
   const names = preference === "flat" ? FLAT_NAMES : SHARP_NAMES;
   const pcs = [...new Set(notes.map(n => n.midi % 12))];
+  // More than 8 different notes (octaves count once) is never named.
+  if (pcs.length > 8) return null;
 
   // Bass note = lowest midi note
   const sortedByMidi = [...notes].sort((a, b) => a.midi - b.midi);
