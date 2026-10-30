@@ -152,6 +152,19 @@ h1 {
   text-align: center;
 }
 
+.roman-numeral .figures {
+  display: inline-flex;
+  flex-direction: column;
+  vertical-align: middle;
+  font-size: 0.7em;
+  line-height: 1;
+  margin: 0 0.08em;
+}
+
+.roman-numeral .figures.single {
+  vertical-align: 0.45em;
+}
+
 button {
   font-family: inherit;
   padding: 0.7rem 1.8rem;

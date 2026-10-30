@@ -40,11 +40,11 @@ const MINOR_ROMAN = [
   "I", "♭II", "II", "III", "♯III", "IV", "♯IV", "V", "VI", "♯VI", "VII", "♯VII"
 ];
 
-// Returns a Roman numeral string like "V7", "ii7♭9", "♭VII", etc.
+// Returns the Roman numeral as { numeral, figure, after }, e.g. { "V", ["6","5"], "(♭9)" }, or null.
 // chord must have { rootPC, suffix } (as returned by recognizeChord).
 // keyPC is the tonic pitch class (0–11); keyMode is "major" | "minor".
-function getRomanNumeral(chord, keyPC, keyMode) {
-  if (chord.suffix === "Q" || chord.suffix === "TT" || chord.poly) return "";
+function getRomanParts(chord, keyPC, keyMode) {
+  if (chord.suffix === "Q" || chord.suffix === "TT" || chord.poly) return null;
   const interval = (chord.rootPC - keyPC + 12) % 12;
   const table = keyMode === "major" ? MAJOR_ROMAN : MINOR_ROMAN;
   const base  = table[interval];              // e.g. "♭VII" or "IV"
@@ -94,7 +94,38 @@ function getRomanNumeral(chord, keyPC, keyMode) {
     "m7#11":    "7♯11",   "m9#11":  "9♯11",   "m13#11": "13♯11", "m6/9#11": "6/9♯11",
     "mM9#11":   "maj9♯11", "m7#11b13": "7♯11♭13", "m9#11b13": "9♯11♭13",
   };
-  roman += (EXT_MAP[sfx] ?? sfx.replace(/#/g, "♯").replace(/b/g, "♭"));
+  const ext = EXT_MAP[sfx] ?? sfx.replace(/#/g, "♯").replace(/b/g, "♭");
 
-  return roman;
+  // Figured bass for inversions (bass is the chord's 3rd, 5th or 7th): triads 6 / 6-4, 7th chords
+  // 6-5 / 4-3 / 4-2. The figure replaces the 7, and anything else goes in brackets: V⁶₅(♭9), I⁶(add2).
+  const figure = figuredBass(chord);
+  if (!figure) return { numeral: roman + ext, figure: null, after: "" };
+  const m2 = ext.match(/^(maj)?(7|9|11|13)?(.*)$/);
+  const rest = (m2[2] && m2[2] !== "7" ? m2[2] : "") + m2[3];
+  return { numeral: roman + (m2[1] || ""), figure, after: rest ? "(" + rest.replace(/^\((.*)\)$/, "$1") + ")" : "" };
+}
+
+// The figured-bass numbers for an inverted chord, top to bottom (["6", "5"]), or null.
+function figuredBass(chord) {
+  if (!chord.bassName || !chord.tones) return null;
+  const bassIv = (pcFromName(chord.bassName) - chord.rootPC + 12) % 12;
+  const bassTone = chord.tones.find(t => t.semitone % 12 === bassIv);
+  if (!bassTone) return null;
+  const has7 = chord.tones.some(t => t.step === 6);
+  const figs = has7 ? { 2: ["6", "5"], 4: ["4", "3"], 6: ["4", "2"] } : { 2: ["6"], 4: ["6", "4"] };
+  return figs[bassTone.step] ?? null;
+}
+
+function pcFromName(name) {
+  const base = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 }[name[0]];
+  let acc = 0;
+  for (const ch of name.slice(1)) acc += (ch === "#" || ch === "♯") ? 1 : (ch === "b" || ch === "♭") ? -1 : 0;
+  return (base + acc + 12) % 12;
+}
+
+// Returns a Roman numeral string like "V7", "ii7♭9", "V6/5(♭9)" (figures joined with "/").
+function getRomanNumeral(chord, keyPC, keyMode) {
+  const r = getRomanParts(chord, keyPC, keyMode);
+  if (!r) return "";
+  return r.numeral + (r.figure ? r.figure.join("/") : "") + r.after;
 }
