@@ -311,8 +311,9 @@ function commitVotes() {
   if (notes) { lastNotes = notes; renderResult(notes); }
 }
 
+// Double sharps/flats use their own glyphs (B𝄫, F𝄪); chord names never contain them.
 function toMusicSymbols(str) {
-  return str.replace(/#/g, "♯").replace(/b/g, "♭");
+  return str.replace(/##/g, "𝄪").replace(/bb/g, "𝄫").replace(/#/g, "♯").replace(/b/g, "♭");
 }
 
 // Show a chord name; a polychord is drawn as its top chord over a bar over its bottom chord.
