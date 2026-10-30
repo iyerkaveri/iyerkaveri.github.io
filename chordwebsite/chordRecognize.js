@@ -256,19 +256,30 @@ function rootName(rootPC, pattern, names) {
   return doubles(other) < doubles(preferred) ? other : preferred;
 }
 
+// A bass that's a chord tone is spelled as that tone (C7/B♭ even with sharps); any other bass follows the preference.
+function bassName(root, rootPC, pattern, bassPC, names) {
+  const tone = pattern.tones.find(t => t.semitone % 12 === (bassPC - rootPC + 12) % 12);
+  const asTone = tone && spellDegree(root, tone);
+  return asTone && !isDouble(asTone) ? asTone : names[bassPC];
+}
+const ODD_BASS = new Set(["B#", "E#", "Cb", "Fb"]);
+
 function makeMatch(rootPC, pattern, bassPC, names) {
-  const root = rootName(rootPC, pattern, names);
+  let root = rootName(rootPC, pattern, names);
+  let bass = bassPC !== rootPC ? bassName(root, rootPC, pattern, bassPC, names) : null;
+  // Never a B♯, E♯, C♭ or F♭ bass: respell the whole chord (G♯/B♯ → A♭/C), or, if the root can't be
+  // respelled, name the bass as the preference does (E7♯5/C).
+  if (ODD_BASS.has(bass)) {
+    const other = ENHARMONIC[root];
+    const otherBass = other && bassName(other, rootPC, pattern, bassPC, names);
+    if (otherBass && !ODD_BASS.has(otherBass)) { root = other; bass = otherBass; }
+    else bass = names[bassPC];
+  }
   const m = {
     root, rootPC, suffix: pattern.suffix,
     chord: root + pattern.suffix, intervals: pattern.intervals, tones: pattern.tones,
   };
-  if (bassPC !== rootPC) {
-    // A bass that's a chord tone is spelled as that tone (C7/B♭ even with sharps); any other bass follows the preference.
-    const tone = pattern.tones.find(t => t.semitone % 12 === (bassPC - rootPC + 12) % 12);
-    const asTone = tone && spellDegree(root, tone);
-    m.bassName = asTone && !isDouble(asTone) ? asTone : names[bassPC];
-    m.chord += "/" + m.bassName;
-  }
+  if (bass) { m.bassName = bass; m.chord += "/" + bass; }
   return m;
 }
 
