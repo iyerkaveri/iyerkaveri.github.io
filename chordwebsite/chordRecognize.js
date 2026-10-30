@@ -122,6 +122,35 @@ const CHORD_PATTERNS = [
   { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:15,step:8},{semitone:18,step:10},{semitone:21,step:12}], suffix: "13#9#11", need: [3, 6, 9] },
   { tones: [{semitone:0,step:0},{semitone:5,step:3},{semitone:7,step:4},{semitone:10,step:6},{semitone:13,step:8},{semitone:21,step:12}], suffix: "13sus4b9", need: [1, 9] },
 
+  // Dense extended chords chosen in review: each needs exactly its own notes, with the root in the bass.
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:10,step:6},{semitone:13,step:8},{semitone:17,step:10}], suffix: "11b9", requireAll: true, rootOnly: true },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:13,step:8},{semitone:17,step:10}], suffix: "11b9", requireAll: true, rootOnly: true },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:9,step:5},{semitone:15,step:8}], suffix: "6(add#9)", requireAll: true, rootOnly: true },
+  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:18,step:10}], suffix: "m7(#11)", requireAll: true, rootOnly: true },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:10,step:6},{semitone:15,step:8},{semitone:17,step:10}], suffix: "11(#9)", requireAll: true, rootOnly: true },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:15,step:8},{semitone:17,step:10}], suffix: "11(#9)", requireAll: true, rootOnly: true },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:10,step:6},{semitone:13,step:8},{semitone:15,step:8},{semitone:21,step:12}], suffix: "13(b9#9)", requireAll: true, rootOnly: true },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:10,step:6},{semitone:13,step:8},{semitone:17,step:10},{semitone:21,step:12}], suffix: "13b9(11)", requireAll: true, rootOnly: true },
+  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:14,step:8},{semitone:18,step:10}], suffix: "m9(#11)", requireAll: true, rootOnly: true },
+  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:18,step:10},{semitone:21,step:12}], suffix: "m13(#11)", requireAll: true, rootOnly: true },
+  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:14,step:8},{semitone:18,step:10},{semitone:21,step:12}], suffix: "m13(#11)", requireAll: true, rootOnly: true },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:10,step:6},{semitone:13,step:8},{semitone:15,step:8},{semitone:17,step:10}], suffix: "11(b9,#9)", requireAll: true, rootOnly: true },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:13,step:8},{semitone:15,step:8},{semitone:17,step:10}], suffix: "11(b9,#9)", requireAll: true, rootOnly: true },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:8,step:4},{semitone:10,step:6},{semitone:13,step:8},{semitone:17,step:10}], suffix: "11(b9,#5)", requireAll: true, rootOnly: true },
+  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:9,step:5},{semitone:14,step:8},{semitone:18,step:10}], suffix: "m6/9(#11)", requireAll: true, rootOnly: true },
+  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:11,step:6},{semitone:14,step:8},{semitone:18,step:10}], suffix: "mM9(#11)", requireAll: true, rootOnly: true },
+  { tones: [{semitone:0,step:0},{semitone:2,step:1},{semitone:7,step:4},{semitone:10,step:6},{semitone:18,step:10},{semitone:20,step:12}], suffix: "7sus2(#11,b13)", requireAll: true, rootOnly: true },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:8,step:4},{semitone:10,step:6},{semitone:15,step:8},{semitone:17,step:10}], suffix: "11(#9,#5)", requireAll: true, rootOnly: true },
+  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:18,step:10},{semitone:20,step:12}], suffix: "m7(#11,b13)", requireAll: true, rootOnly: true },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:13,step:8},{semitone:17,step:10},{semitone:20,step:12}], suffix: "11b9b13", requireAll: true, rootOnly: true },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:14,step:8},{semitone:18,step:10},{semitone:20,step:12}], suffix: "9#11b13", requireAll: true, rootOnly: true },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:8,step:4},{semitone:10,step:6},{semitone:13,step:8},{semitone:15,step:8},{semitone:17,step:10}], suffix: "11(b9,#9,#5)", requireAll: true, rootOnly: true },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:10,step:6},{semitone:13,step:8},{semitone:15,step:8},{semitone:17,step:10},{semitone:21,step:12}], suffix: "13(b9,#9,11)", requireAll: true, rootOnly: true },
+  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:14,step:8},{semitone:18,step:10},{semitone:20,step:12}], suffix: "m9(#11,b13)", requireAll: true, rootOnly: true },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:15,step:8},{semitone:17,step:10},{semitone:20,step:12}], suffix: "11(#9,b13)", requireAll: true, rootOnly: true },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:15,step:8},{semitone:17,step:10},{semitone:21,step:12}], suffix: "13(#9,11)", requireAll: true, rootOnly: true },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:13,step:8},{semitone:15,step:8},{semitone:17,step:10},{semitone:20,step:12}], suffix: "11(b9,#9,b13)", requireAll: true, rootOnly: true },
+
   // 7alt: dom7 with ≥3 of {b9,#9,b5,#5} — four 3-alteration combos + all-four.
   // Ordered most→fewest intervals so highest score wins in the matching loop.
   { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:6,step:4},{semitone:8,step:4},{semitone:10,step:6},{semitone:13,step:8},{semitone:15,step:8}], suffix: "7alt" }, // all four
@@ -273,6 +302,7 @@ function recognizeChord(notes, preference = "sharp") {
       // reads as a plain chord over that note instead (B♭ D♭ F over C is B♭m/C, not B♭madd2/C).
       const inversionTones = pattern.suffix === "dim7" ? [3, 6, 9] : [3, 4, 6, 7, 8, 10];
       if (root !== bassPC && bassIsChordTone && !inversionTones.includes(bassInterval)) continue;
+      if (pattern.rootOnly && root !== bassPC) continue;
       // Sus chords with a 9th or higher are never inverted or slashed (C D♭ E♭ G♭ A♭ B♭ B is A♭m11/C, not D♭13sus4/C).
       if (root !== bassPC && !pattern.tones.some(t => t.step === 2) && pattern.tones.some(t => t.step >= 8)) continue;
       // A slash chord's own score excludes its bass, so B D F♯ over C is Bm/C, not D13/C (which leans on C as its 7th).
@@ -296,7 +326,7 @@ function recognizeChord(notes, preference = "sharp") {
 
   // A sus reading of the bass gives way to a complete triad/7th above it (C D F B♭ → B♭/C),
   // except a 13sus4, which keeps its name (C F A B♭ D is C13sus4, not B♭maj7/C).
-  const isSus = !best.pattern.tones.some(t => t.step === 2) && best.pattern.suffix !== "13sus4";
+  const isSus = !best.pattern.tones.some(t => t.step === 2) && best.pattern.suffix !== "13sus4" && !best.pattern.rootOnly;
   if (best.root === bassPC && isSus) {
     const upper = candidates.find(c => c.root !== bassPC && c.complete && c.explainsAll && TERTIAN.has(c.pattern.suffix));
     if (upper) best = upper;
