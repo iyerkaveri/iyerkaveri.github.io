@@ -273,6 +273,8 @@ function recognizeChord(notes, preference = "sharp") {
       // reads as a plain chord over that note instead (B♭ D♭ F over C is B♭m/C, not B♭madd2/C).
       const inversionTones = pattern.suffix === "dim7" ? [3, 6, 9] : [3, 4, 6, 7, 8, 10];
       if (root !== bassPC && bassIsChordTone && !inversionTones.includes(bassInterval)) continue;
+      // Sus chords with a 9th or higher are never inverted or slashed (C D♭ E♭ G♭ A♭ B♭ B is A♭m11/C, not D♭13sus4/C).
+      if (root !== bassPC && !pattern.tones.some(t => t.step === 2) && pattern.tones.some(t => t.step >= 8)) continue;
       // A slash chord's own score excludes its bass, so B D F♯ over C is Bm/C, not D13/C (which leans on C as its 7th).
       const ownScore = root === bassPC ? score : score - (bassIsChordTone ? 1 : 0);
       candidates.push({ root, pattern, index, ownScore, explainsAll, bassIsChordTone,
