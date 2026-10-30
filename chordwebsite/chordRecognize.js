@@ -64,6 +64,16 @@ const CHORD_PATTERNS = [
   { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:18,step:10}], suffix: "7#11", requireFifth: true },
   { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:20,step:12}], suffix: "7b13", requireFifth: true },
   { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:14,step:8},{semitone:18,step:10}], suffix: "9#11" },
+  // `need` lists tones (semitones mod 12) that must be played beyond the 3rd/7th.
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:8,step:4},{semitone:10,step:6},{semitone:14,step:8}], suffix: "9#5",  requireAll: true },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:8,step:4},{semitone:11,step:6},{semitone:14,step:8}], suffix: "maj9#5", requireAll: true },
+  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:6,step:4},{semitone:10,step:6},{semitone:14,step:8}], suffix: "m9b5", requireAll: true },
+  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:6,step:4},{semitone:10,step:6},{semitone:17,step:10}], suffix: "m11b5", requireAll: true },
+  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:6,step:4},{semitone:10,step:6},{semitone:14,step:8},{semitone:17,step:10}], suffix: "m11b5", need: [6, 5] },
+  { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:20,step:12}], suffix: "m7b13", requireFifth: true, need: [8] },
+  // Dominant 11 (natural 11 over the major 3rd), 9th optional.
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:17,step:10}], suffix: "11", need: [5] },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:14,step:8},{semitone:17,step:10}], suffix: "11", need: [5] },
   { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:17,step:10}], suffix: "m11"  },
   { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:11,step:6},{semitone:14,step:8}], suffix: "mM9"  },
   { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:11,step:6},{semitone:18,step:10}], suffix: "maj7(#11)" },
@@ -77,6 +87,7 @@ const CHORD_PATTERNS = [
   // semitone 9 = 6th (step 5), semitone 14 = 9th (step 8)
   { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:9,step:5},{semitone:14,step:8}], suffix: "6/9"  },
   { tones: [{semitone:0,step:0},{semitone:3,step:2},{semitone:7,step:4},{semitone:9,step:5},{semitone:14,step:8}], suffix: "m6/9" },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:9,step:5},{semitone:14,step:8},{semitone:18,step:10}], suffix: "6/9#11", need: [4, 9, 2, 6] },
 
   // ── 13ths ─────────────────────────────────────────────────────────────────
   // Two patterns per 13th type:
@@ -104,6 +115,11 @@ const CHORD_PATTERNS = [
   // 13 with b9 / #9
   { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:13,step:8},{semitone:21,step:12}], suffix: "13b9" },
   { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:15,step:8},{semitone:21,step:12}], suffix: "13#9" },
+  // 13 with ♯11 (lydian dominant), and 13 with ♯11 plus an altered 9th; 9th/5th optional where natural.
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:14,step:8},{semitone:18,step:10},{semitone:21,step:12}], suffix: "13#11",   need: [6, 9] },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:13,step:8},{semitone:18,step:10},{semitone:21,step:12}], suffix: "13b9#11", need: [1, 6, 9] },
+  { tones: [{semitone:0,step:0},{semitone:4,step:2},{semitone:7,step:4},{semitone:10,step:6},{semitone:15,step:8},{semitone:18,step:10},{semitone:21,step:12}], suffix: "13#9#11", need: [3, 6, 9] },
+  { tones: [{semitone:0,step:0},{semitone:5,step:3},{semitone:7,step:4},{semitone:10,step:6},{semitone:13,step:8},{semitone:21,step:12}], suffix: "13sus4b9", need: [1, 9] },
 
   // 7alt: dom7 with ≥3 of {b9,#9,b5,#5} — four 3-alteration combos + all-four.
   // Ordered most→fewest intervals so highest score wins in the matching loop.
@@ -136,7 +152,14 @@ for (const pattern of CHORD_PATTERNS) {
     ? [...seventh, ...(third.length ? third : susTone)].map(t => t.semitone % 12)
     : [];
   if (pattern.requireAll)   pattern.required = [...pattern.intervals];
-  if (pattern.requireFifth) pattern.required.push(7);
+  if (pattern.requireFifth) { pattern.required.push(7); pattern.optionalFifth = null; }
+  if (pattern.need) pattern.required.push(...pattern.need);
+  if (pattern.suffix === "6/9#11") pattern.optionalFifth = 7;
+  // add2add4: every note except the 5th must be played (C D E F is complete).
+  if (pattern.suffix === "add2add4" || pattern.suffix === "madd2add4") {
+    pattern.optionalFifth = 7;
+    pattern.required = pattern.intervals.filter(iv => iv !== 7);
+  }
   // With 2+ alterations, ♯11/♭13 are named ♭5/♯5 and a played P5 doesn't change the name (C E G B♭ D♭ F♯ → C7♭5♭9).
   pattern.allowedExtras = /^7(alt|[b#]5[b#]9)$/.test(pattern.suffix) ? [7] : [];
 }
