@@ -44,7 +44,8 @@ const MINOR_ROMAN = [
 // chord must have { rootPC, suffix } (as returned by recognizeChord).
 // keyPC is the tonic pitch class (0–11); keyMode is "major" | "minor".
 // midis (the played notes) lets augmented 6th chords be recognised by their exact notes.
-function getRomanParts(chord, keyPC, keyMode, midis) {
+// secondary: read dominant chords that lead to another degree as V/x (C7 in C → V7/IV).
+function getRomanParts(chord, keyPC, keyMode, midis, secondary = false) {
   if (chord.suffix === "Q" || chord.suffix === "TT" || chord.poly) return null;
   const aug6 = midis && augmentedSixth(midis, keyPC);
   if (aug6) return { numeral: aug6, figure: ["+6"], after: "" };
@@ -52,7 +53,8 @@ function getRomanParts(chord, keyPC, keyMode, midis) {
   // Neapolitan: a major triad on ♭2, in either mode (N, N⁶, N⁶₄).
   if (interval === 1 && chord.suffix === "") return { numeral: "N", figure: figuredBass(chord), after: "" };
   const table = keyMode === "major" ? MAJOR_ROMAN : MINOR_ROMAN;
-  const base  = table[interval];              // e.g. "♭VII" or "IV"
+  const target = secondary ? secondaryTarget(chord, interval, keyMode) : null;
+  const base  = target ? "V" : table[interval];   // e.g. "♭VII" or "IV"
 
   // Separate any leading ♭/♯ prefix from the numeral letters.
   const m       = base.match(/^([♭♯]?)(.+)$/);
@@ -104,10 +106,11 @@ function getRomanParts(chord, keyPC, keyMode, midis) {
   // Figured bass for inversions (bass is the chord's 3rd, 5th or 7th): triads 6 / 6-4, 7th chords
   // 6-5 / 4-3 / 4-2. The figure replaces the 7, and anything else goes in brackets: V⁶₅(♭9), I⁶(add2).
   const figure = figuredBass(chord);
-  if (!figure) return { numeral: roman + ext, figure: null, after: "" };
+  const of = target ? "/" + target : "";
+  if (!figure) return { numeral: roman + ext + of, figure: null, after: "" };
   const m2 = ext.match(/^(maj)?(7|9|11|13)?(.*)$/);
   const rest = (m2[2] && m2[2] !== "7" ? m2[2] : "") + m2[3];
-  return { numeral: roman + (m2[1] || ""), figure, after: rest ? "(" + rest.replace(/^\((.*)\)$/, "$1") + ")" : "" };
+  return { numeral: roman + (m2[1] || ""), figure, after: (rest ? "(" + rest.replace(/^\((.*)\)$/, "$1") + ")" : "") + of };
 }
 
 // Augmented 6th chords, in either mode: exactly these notes above the tonic, with ♭6 in the bass.
@@ -129,6 +132,20 @@ function spellAugmentedSixthNote(midi, keyPC, keyMode) {
   return withOctave(spellDegree(tonic, AUG6_DEGREES[(midi - keyPC + 120) % 12]), midi);
 }
 
+// Secondary dominants: the degree a dominant chord resolves to (a 5th below its root), or null.
+// Dominant 7th-type chords (major 3rd + minor 7th) and major triads that aren't already in the key qualify;
+// targets are the key's major and minor triads other than the tonic (no diminished ones).
+const SECONDARY_TARGETS = { major: { 2: "ii", 4: "iii", 5: "IV", 7: "V", 9: "vi" },
+                            minor: { 3: "III", 5: "iv", 7: "V", 8: "VI", 10: "VII" } };
+const DIATONIC_MAJOR_TRIADS = { major: [0, 5, 7], minor: [3, 5, 7, 8, 10] };   // IV in minor: melodic minor
+function secondaryTarget(chord, interval, keyMode) {
+  const semis = chord.tones.map(t => t.semitone % 12);
+  const dominant7 = semis.includes(4) && semis.includes(10);
+  const triad = chord.suffix === "" && !DIATONIC_MAJOR_TRIADS[keyMode].includes(interval);
+  if (!dominant7 && !triad) return null;
+  return SECONDARY_TARGETS[keyMode][(interval + 5) % 12] ?? null;
+}
+
 // The figured-bass numbers for an inverted chord, top to bottom (["6", "5"]), or null.
 function figuredBass(chord) {
   if (!chord.bassName || !chord.tones) return null;
@@ -148,8 +165,8 @@ function pcFromName(name) {
 }
 
 // Returns a Roman numeral string like "V7", "ii7♭9", "V6/5(♭9)" (figures joined with "/").
-function getRomanNumeral(chord, keyPC, keyMode, midis) {
-  const r = getRomanParts(chord, keyPC, keyMode, midis);
+function getRomanNumeral(chord, keyPC, keyMode, midis, secondary = false) {
+  const r = getRomanParts(chord, keyPC, keyMode, midis, secondary);
   if (!r) return "";
   return r.numeral + (r.figure ? r.figure.join("/") : "") + r.after;
 }

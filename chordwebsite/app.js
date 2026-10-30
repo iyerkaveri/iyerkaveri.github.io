@@ -32,6 +32,7 @@ const midiPianoRoll   = document.getElementById("midiPianoRoll");
 // ── Shared state ──────────────────────────────────────────────────────────────
 let accidentalPreference = "sharp";
 let selectedKey   = null; // { pc, mode } or null
+let showSecondary = false; // read C7 in C as V7/IV
 let lastNotes     = null;
 let lastMidiNotes = [];
 
@@ -84,6 +85,17 @@ keySelectEl.addEventListener("change", () => {
   if (lastNotes)            renderResult(lastNotes);
   if (midiRunning)          renderMidiDisplay();
   if (!lastNotes)           micRomanEl.textContent = "";
+});
+
+// ── Secondary dominants ──
+const secondaryToggleEl = document.getElementById("secondaryToggle");
+try { showSecondary = localStorage.getItem("secondaryDominants") === "1"; } catch {}
+secondaryToggleEl.checked = showSecondary;
+secondaryToggleEl.addEventListener("change", () => {
+  showSecondary = secondaryToggleEl.checked;
+  try { localStorage.setItem("secondaryDominants", showSecondary ? "1" : "0"); } catch {}
+  if (lastNotes)   renderResult(lastNotes);
+  if (midiRunning) renderMidiDisplay();
 });
 
 // ── Accidental preference ─────────────────────────────────────────────────────
@@ -342,7 +354,7 @@ function spellNote(midi, chord, midis) {
 // Roman numeral with any figured bass stacked after it: V⁶₅(♭9).
 function showRomanNumeral(el, chord, midis) {
   el.textContent = "";
-  const r = chord && selectedKey && getRomanParts(chord, selectedKey.pc, selectedKey.mode, midis);
+  const r = chord && selectedKey && getRomanParts(chord, selectedKey.pc, selectedKey.mode, midis, showSecondary);
   if (!r) return;
   el.append(r.numeral);
   if (r.figure) {
