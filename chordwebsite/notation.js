@@ -99,13 +99,10 @@ function drawStave(ctx, clef, y, width, noteList) {
 }
 
 // Convert a MIDI note number to a VexFlow key + accidental object.
-function midiToVexNote(midi, preference) {
-  const pc = midi % 12;
-  const octave = Math.floor(midi / 12) - 1;
-  const name = (preference === "flat" ? FLAT_NAMES : SHARP_NAMES)[pc];
-  const letter = name[0];
-  const acc = name.slice(1); // "#", "b", or ""
-  return { key: `${letter.toLowerCase()}/${octave}`, accidental: acc };
+// spell(midi) names the note with its octave, e.g. "C#4" or "Bbb3" (see spellPlayedNote).
+function midiToVexNote(midi, spell) {
+  const [, letter, acc, octave] = spell(midi).match(/^([A-G])(#{1,2}|b{1,2})?(-?\d+)$/);
+  return { key: `${letter.toLowerCase()}/${octave}`, accidental: acc ?? "" };
 }
 
 // Render actual MIDI notes on a grand staff (treble + bass) with brace.
@@ -113,7 +110,7 @@ function midiToVexNote(midi, preference) {
 // of whether one hand has accidentals and the other does not.
 // midiNotes is an array of sorted midi integers.
 // opacityOf(midi) → 0..1 lets sustained notes fade; fully faded notes are omitted.
-function renderGrandStaffNotation(midiNotes, preference, opacityOf = () => 1) {
+function renderGrandStaffNotation(midiNotes, spell, opacityOf = () => 1) {
   const container = document.getElementById("midiNotation");
   if (!container.parentElement?.clientWidth) return; // hidden tab; redrawn when shown
   container.innerHTML = "";
@@ -121,7 +118,7 @@ function renderGrandStaffNotation(midiNotes, preference, opacityOf = () => 1) {
   const toStyled = m => {
     const alpha = opacityOf(m);
     const color = `rgba(0, 0, 0, ${alpha})`;
-    return { ...midiToVexNote(m, preference), style: { fillStyle: color, strokeStyle: color } };
+    return { ...midiToVexNote(m, spell), style: { fillStyle: color, strokeStyle: color } };
   };
   const visible   = midiNotes.filter(m => opacityOf(m) > 0);
   const trebleVex = visible.filter(m => m >= 60).map(toStyled);

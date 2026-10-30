@@ -334,7 +334,7 @@ function showChordName(el, chord) {
 
 function renderResult(notes) {
   const chord = recognizeChord(notes, accidentalPreference);
-  const displayNames = notes.map(n => midiToNoteName(n.midi, accidentalPreference));
+  const displayNames = notes.map(n => spellPlayedNote(n.midi, chord, accidentalPreference));
 
   if (chord) {
     showChordName(chordEl, chord);
@@ -450,7 +450,9 @@ function onMidiNotesChange(midiNotes, sustainDown = false) {
 }
 
 function renderMidiNotation() {
-  renderGrandStaffNotation(pedalHeldNotes ?? lastMidiNotes, accidentalPreference, noteOpacity);
+  const midiNotes = pedalHeldNotes ?? lastMidiNotes;
+  const chord = midiNotes.length ? recognizeChord(midiNotes.map(m => ({ midi: m })), accidentalPreference) : null;
+  renderGrandStaffNotation(midiNotes, m => spellPlayedNote(m, chord, accidentalPreference), noteOpacity);
 
   const stillFading = [...releasedAt.keys()].some(m => noteOpacity(m) > 0);
   if (stillFading && fadeFrame === null) {
@@ -474,7 +476,7 @@ function renderMidiDisplay() {
   midiNotesDetEl.style.visibility = "visible";
   const noteObjs = midiNotes.map(m => ({ midi: m }));
   const chord = recognizeChord(noteObjs, accidentalPreference);
-  const names = midiNotes.map(m => toMusicSymbols(midiToNoteName(m, accidentalPreference)));
+  const names = midiNotes.map(m => toMusicSymbols(spellPlayedNote(m, chord, accidentalPreference)));
 
   midiNotesEl.textContent = names.join(", ");
   showChordName(midiChordEl, chord);

@@ -229,13 +229,64 @@ function quartalStack(pcs, bassPC) {
 // Triads and 7ths with a 3rd — a complete one above the bass beats a sus reading of the bass (Bb/C, G/C).
 const TERTIAN = new Set(["", "m", "dim", "aug", "(b5)", "maj7", "7", "m7", "mM7", "m7b5", "dim7", "7#5", "maj7#5", "7b5"]);
 
+// ── Spelling ──────────────────────────────────────────────────────────────────
+// A chord tone takes the letter its step gives from the root (a ♭3 is a 3rd's letter), with whatever
+// accidental lands it on the right pitch: from F♯, semitone 3 / step 2 is A; from G♭ it would be B𝄫.
+const LETTER_NAMES = "CDEFGAB";
+const LETTER_PCS   = [0, 2, 4, 5, 7, 9, 11];
+const ACCIDENTALS  = { "-2": "bb", "-1": "b", "0": "", "1": "#", "2": "##" };
+
+function spellDegree(rootName, tone) {
+  const rootLetter = LETTER_NAMES.indexOf(rootName[0]);
+  const rootPC = (LETTER_PCS[rootLetter] + (rootName.includes("#") ? 1 : rootName.includes("b") ? -1 : 0) + 12) % 12;
+  const letter = (rootLetter + tone.step) % 7;
+  const acc = ((rootPC + tone.semitone - LETTER_PCS[letter]) % 12 + 18) % 12 - 6;
+  return LETTER_NAMES[letter] + (ACCIDENTALS[acc] ?? "");
+}
+const isDouble = name => /##|bb/.test(name);
+
+// The root keeps the sharp/flat preference unless that spelling forces more double sharps/flats
+// on the chord's own notes than the other one does (G♭m → F♯m, D♯ → E♭, A♯ → B♭).
+const ENHARMONIC = { "C#": "Db", "Db": "C#", "D#": "Eb", "Eb": "D#", "F#": "Gb", "Gb": "F#",
+                     "G#": "Ab", "Ab": "G#", "A#": "Bb", "Bb": "A#" };
+function rootName(rootPC, pattern, names) {
+  const preferred = names[rootPC], other = ENHARMONIC[preferred];
+  if (!other) return preferred;
+  const doubles = name => pattern.tones.filter(t => isDouble(spellDegree(name, t))).length;
+  return doubles(other) < doubles(preferred) ? other : preferred;
+}
+
 function makeMatch(rootPC, pattern, bassPC, names) {
+  const root = rootName(rootPC, pattern, names);
   const m = {
-    root: names[rootPC], rootPC, suffix: pattern.suffix,
-    chord: names[rootPC] + pattern.suffix, intervals: pattern.intervals, tones: pattern.tones,
+    root, rootPC, suffix: pattern.suffix,
+    chord: root + pattern.suffix, intervals: pattern.intervals, tones: pattern.tones,
   };
-  if (bassPC !== rootPC) { m.bassName = names[bassPC]; m.chord += "/" + names[bassPC]; }
+  if (bassPC !== rootPC) {
+    // A bass that's a chord tone is spelled as that tone (C7/B♭ even with sharps); any other bass follows the preference.
+    const tone = pattern.tones.find(t => t.semitone % 12 === (bassPC - rootPC + 12) % 12);
+    const asTone = tone && spellDegree(root, tone);
+    m.bassName = asTone && !isDouble(asTone) ? asTone : names[bassPC];
+    m.chord += "/" + m.bassName;
+  }
   return m;
+}
+
+// Name a played note (e.g. "C#4") by its place in the recognised chord: A/C plays C, A, C♯, E.
+// Polychord notes follow the chord they belong to (the bottom one if both); notes outside the chord,
+// and the notes of Q and TT (which have no chord degrees), follow the preference.
+function spellPlayedNote(midi, chord, preference = "sharp") {
+  const pc = midi % 12;
+  let name = (preference === "flat" ? FLAT_NAMES : SHARP_NAMES)[pc];
+  const parts = !chord || chord.suffix === "Q" || chord.suffix === "TT" ? []
+              : chord.poly ? [chord.bottomMatch, chord.topMatch] : [chord];
+  for (const part of parts) {
+    const tone = part.tones.find(t => t.semitone % 12 === (pc - part.rootPC + 12) % 12);
+    if (tone) { name = spellDegree(part.root, tone); break; }
+  }
+  const natural = LETTER_PCS[LETTER_NAMES.indexOf(name[0])];
+  const acc = ((pc - natural) % 12 + 18) % 12 - 6;
+  return name + (Math.round((midi - acc - natural) / 12) - 1);
 }
 
 function quartalMatch(seq, pcs, bassPC, names) {
@@ -300,6 +351,7 @@ function polychord(pcs, bassPC, names) {
   const offset = (m.root - bassPC + 12) % 12;
   return {
     poly: true, top: top.chord, bottom: bottom.chord, chord: top.chord + "|" + bottom.chord,
+    topMatch: top, bottomMatch: bottom,
     root: bottom.root, rootPC: bassPC, suffix: "poly",
     intervals: [...new Set([...bottom.intervals, ...top.intervals.map(iv => (iv + offset) % 12)])],
     tones: [...bottom.tones,
