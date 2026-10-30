@@ -334,9 +334,9 @@ function showChordName(el, chord) {
 }
 
 // Roman numeral with any figured bass stacked after it: V⁶₅(♭9).
-function showRomanNumeral(el, chord) {
+function showRomanNumeral(el, chord, midis) {
   el.textContent = "";
-  const r = chord && selectedKey && getRomanParts(chord, selectedKey.pc, selectedKey.mode);
+  const r = chord && selectedKey && getRomanParts(chord, selectedKey.pc, selectedKey.mode, midis);
   if (!r) return;
   el.append(r.numeral);
   if (r.figure) {
@@ -359,7 +359,7 @@ function renderResult(notes) {
 
   if (chord) {
     showChordName(chordEl, chord);
-    showRomanNumeral(micRomanEl, chord);
+    showRomanNumeral(micRomanEl, chord, notes.map(n => n.midi));
     notesEl.textContent = toMusicSymbols(displayNames.join(", "));
     micNotesDetEl.style.visibility = "visible";
     statusEl.textContent = "Chord detected!";
@@ -499,7 +499,7 @@ function renderMidiDisplay() {
 
   midiNotesEl.textContent = names.join(", ");
   showChordName(midiChordEl, chord);
-  showRomanNumeral(midiRomanEl, chord);
+  showRomanNumeral(midiRomanEl, chord, midiNotes);
   midiStatusEl.textContent = pedalHeldNotes
     ? "Held by sustain pedal"
     : (chord ? "Chord detected!" : "Listening…");

@@ -43,9 +43,14 @@ const MINOR_ROMAN = [
 // Returns the Roman numeral as { numeral, figure, after }, e.g. { "V", ["6","5"], "(♭9)" }, or null.
 // chord must have { rootPC, suffix } (as returned by recognizeChord).
 // keyPC is the tonic pitch class (0–11); keyMode is "major" | "minor".
-function getRomanParts(chord, keyPC, keyMode) {
+// midis (the played notes) lets augmented 6th chords be recognised by their exact notes.
+function getRomanParts(chord, keyPC, keyMode, midis) {
   if (chord.suffix === "Q" || chord.suffix === "TT" || chord.poly) return null;
+  const aug6 = midis && augmentedSixth(midis, keyPC);
+  if (aug6) return { numeral: aug6, figure: ["+6"], after: "" };
   const interval = (chord.rootPC - keyPC + 12) % 12;
+  // Neapolitan: a major triad on ♭2, in either mode (N, N⁶, N⁶₄).
+  if (interval === 1 && chord.suffix === "") return { numeral: "N", figure: figuredBass(chord), after: "" };
   const table = keyMode === "major" ? MAJOR_ROMAN : MINOR_ROMAN;
   const base  = table[interval];              // e.g. "♭VII" or "IV"
 
@@ -105,6 +110,16 @@ function getRomanParts(chord, keyPC, keyMode) {
   return { numeral: roman + (m2[1] || ""), figure, after: rest ? "(" + rest.replace(/^\((.*)\)$/, "$1") + ")" : "" };
 }
 
+// Augmented 6th chords, in either mode: exactly these notes above the tonic, with ♭6 in the bass.
+// It+6 ♭6 1 ♯4, Fr+6 ♭6 1 2 ♯4, Ger+6 ♭6 1 ♭3 ♯4 (in C: A♭ C F♯, A♭ C D F♯, A♭ C E♭ F♯).
+const AUG_SIXTHS = { "0,6,8": "It", "0,2,6,8": "Fr", "0,3,6,8": "Ger" };
+function augmentedSixth(midis, keyPC) {
+  const bass = Math.min(...midis);
+  if ((bass - keyPC + 120) % 12 !== 8) return null;
+  const ivs = [...new Set(midis.map(m => (m - keyPC + 120) % 12))].sort((a, b) => a - b);
+  return AUG_SIXTHS[ivs.join(",")] ?? null;
+}
+
 // The figured-bass numbers for an inverted chord, top to bottom (["6", "5"]), or null.
 function figuredBass(chord) {
   if (!chord.bassName || !chord.tones) return null;
@@ -124,8 +139,8 @@ function pcFromName(name) {
 }
 
 // Returns a Roman numeral string like "V7", "ii7♭9", "V6/5(♭9)" (figures joined with "/").
-function getRomanNumeral(chord, keyPC, keyMode) {
-  const r = getRomanParts(chord, keyPC, keyMode);
+function getRomanNumeral(chord, keyPC, keyMode, midis) {
+  const r = getRomanParts(chord, keyPC, keyMode, midis);
   if (!r) return "";
   return r.numeral + (r.figure ? r.figure.join("/") : "") + r.after;
 }
