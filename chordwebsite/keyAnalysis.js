@@ -44,7 +44,7 @@ const MINOR_ROMAN = [
 // chord must have { rootPC, suffix } (as returned by recognizeChord).
 // keyPC is the tonic pitch class (0–11); keyMode is "major" | "minor".
 function getRomanNumeral(chord, keyPC, keyMode) {
-  if (chord.suffix === "Q" || chord.suffix === "TT") return "";
+  if (chord.suffix === "Q" || chord.suffix === "TT" || chord.poly) return "";
   const interval = (chord.rootPC - keyPC + 12) % 12;
   const table = keyMode === "major" ? MAJOR_ROMAN : MINOR_ROMAN;
   const base  = table[interval];              // e.g. "♭VII" or "IV"

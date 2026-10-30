@@ -256,11 +256,77 @@ function quartalMatch(seq, pcs, bassPC, names) {
   };
 }
 
+// ── Polychords ────────────────────────────────────────────────────────────────
+// A lower chord rooted on the bass (major or minor triad, or a power chord) under a complete chord
+// above it (major, minor, diminished or augmented triad, or a maj7, dominant 7 or m7) that adds at
+// least one note; together they cover every played note. C C♯ E F♯ G A is F♯m over C.
+// POLY_REPLACES sets which single-chord names a polychord may replace:
+//   "none"          only notes that would otherwise get no name
+//   "extendedSlash" also slash chords whose upper chord has a 9th, 11th or 13th (A13♯9/C → F♯m over C)
+//   "anySlash"      also any other slash chord
+const POLY_REPLACES = "none";
+const POLY_BOTTOM = ["", "m", "5"];
+const POLY_TOP    = ["", "m", "dim", "aug", "maj7", "7", "m7"];
+
+function polychord(pcs, bassPC, names) {
+  const patternFor = suffix => CHORD_PATTERNS.find(p => p.suffix === suffix);
+  const chordPCs = (root, pattern) => pattern.intervals.map(iv => (root + iv) % 12);
+  const matches = [];
+  for (const bSuffix of POLY_BOTTOM) {
+    const bottom = chordPCs(bassPC, patternFor(bSuffix));
+    if (!bottom.every(pc => pcs.includes(pc))) continue;
+    for (const tSuffix of POLY_TOP) {
+      for (let root = 0; root < 12; root++) {
+        const top = chordPCs(root, patternFor(tSuffix));
+        if (!top.every(pc => pcs.includes(pc))) continue;
+        if (!pcs.every(pc => bottom.includes(pc) || top.includes(pc))) continue;
+        if (top.every(pc => bottom.includes(pc))) continue;
+        matches.push({ bSuffix, tSuffix, root, shared: top.some(pc => bottom.includes(pc)) });
+      }
+    }
+  }
+  if (!matches.length) return null;
+  // Prefer no shared notes, then a triad below, then a triad above, then the top root nearest above the bass.
+  const isSeventh = m => m.tSuffix.includes("7");
+  matches.sort((a, b) => (a.shared - b.shared) || ((a.bSuffix === "5") - (b.bSuffix === "5")) ||
+    (isSeventh(a) - isSeventh(b)) || ((a.root - bassPC + 12) % 12) - ((b.root - bassPC + 12) % 12));
+  const m = matches[0];
+  const bottom = makeMatch(bassPC, patternFor(m.bSuffix), bassPC, names);
+  const top    = makeMatch(m.root, patternFor(m.tSuffix), m.root, names);
+  // Notation: the top chord stacked an octave above the bottom chord's root, spelled from the bottom root.
+  const LETTERS = "CDEFGAB";
+  const letterGap = (LETTERS.indexOf(top.root[0]) - LETTERS.indexOf(bottom.root[0]) + 7) % 7;
+  const offset = (m.root - bassPC + 12) % 12;
+  return {
+    poly: true, top: top.chord, bottom: bottom.chord, chord: top.chord + "|" + bottom.chord,
+    root: bottom.root, rootPC: bassPC, suffix: "poly",
+    intervals: [...new Set([...bottom.intervals, ...top.intervals.map(iv => (iv + offset) % 12)])],
+    tones: [...bottom.tones,
+            ...top.tones.map(t => ({ semitone: 12 + offset + t.semitone, step: 7 + letterGap + t.step }))],
+  };
+}
+
+// Whether a polychord may replace this single-chord result (see POLY_REPLACES).
+function polyMayReplace(match) {
+  if (!match) return true;
+  if (!match.bassName || POLY_REPLACES === "none") return false;
+  return POLY_REPLACES === "anySlash" || match.tones.some(t => t.step >= 8);
+}
+
+function recognizeChord(notes, preference = "sharp") {
+  const match = recognizeSingleChord(notes, preference);
+  if (notes.length < 2 || !polyMayReplace(match)) return match;
+  const names = preference === "flat" ? FLAT_NAMES : SHARP_NAMES;
+  const pcs = [...new Set(notes.map(n => n.midi % 12))];
+  const bassPC = Math.min(...notes.map(n => n.midi)) % 12;
+  return polychord(pcs, bassPC, names) ?? match;
+}
+
 // Main: given array of {midi} notes and an accidental preference,
 // return a chord match object or null.
 // Slash chord detection: if the lowest-midi note's pitch class differs from
 // the recognised root, the result includes a /Bass suffix.
-function recognizeChord(notes, preference = "sharp") {
+function recognizeSingleChord(notes, preference = "sharp") {
   if (notes.length < 2) return null;
 
   const names = preference === "flat" ? FLAT_NAMES : SHARP_NAMES;

@@ -233,6 +233,19 @@ button:disabled { opacity: 0.4; cursor: default; }
   min-height: 1.15em;
   text-align: center;
 }
+/* Polychord: top chord over a bar over the bottom chord, sized so both lines fit in the usual space. */
+.chord-name .poly {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  font-size: 0.55em;
+  line-height: 1.05;
+  vertical-align: middle;
+}
+.chord-name .poly span + span {
+  border-top: 0.08em solid currentColor;
+  padding-top: 0.06em;
+}
 
 .notes-detected {
   font-size: 0.9rem;

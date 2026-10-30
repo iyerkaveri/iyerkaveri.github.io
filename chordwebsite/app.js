@@ -315,12 +315,29 @@ function toMusicSymbols(str) {
   return str.replace(/#/g, "♯").replace(/b/g, "♭");
 }
 
+// Show a chord name; a polychord is drawn as its top chord over a bar over its bottom chord.
+function showChordName(el, chord) {
+  el.textContent = "";
+  el.classList.toggle("is-poly", !!(chord && chord.poly));
+  if (!chord) return;
+  if (!chord.poly) { el.textContent = toMusicSymbols(chord.chord); return; }
+  const stack = document.createElement("span");
+  stack.className = "poly";
+  stack.setAttribute("aria-label", toMusicSymbols(chord.top + " over " + chord.bottom));
+  for (const part of [chord.top, chord.bottom]) {
+    const line = document.createElement("span");
+    line.textContent = toMusicSymbols(part);
+    stack.appendChild(line);
+  }
+  el.appendChild(stack);
+}
+
 function renderResult(notes) {
   const chord = recognizeChord(notes, accidentalPreference);
   const displayNames = notes.map(n => midiToNoteName(n.midi, accidentalPreference));
 
   if (chord) {
-    chordEl.textContent = toMusicSymbols(chord.chord);
+    showChordName(chordEl, chord);
     micRomanEl.textContent = selectedKey
       ? getRomanNumeral(chord, selectedKey.pc, selectedKey.mode)
       : "";
@@ -460,7 +477,7 @@ function renderMidiDisplay() {
   const names = midiNotes.map(m => toMusicSymbols(midiToNoteName(m, accidentalPreference)));
 
   midiNotesEl.textContent = names.join(", ");
-  midiChordEl.textContent = chord ? toMusicSymbols(chord.chord) : "";
+  showChordName(midiChordEl, chord);
   midiRomanEl.textContent = (chord && selectedKey)
     ? getRomanNumeral(chord, selectedKey.pc, selectedKey.mode)
     : "";
