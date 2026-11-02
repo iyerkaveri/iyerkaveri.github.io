@@ -348,7 +348,8 @@ function showChordName(el, chord) {
 // Name a played note by its place in the chord, or by its place in the key for an augmented 6th.
 function spellNote(midi, chord, midis) {
   if (selectedKey && augmentedSixth(midis, selectedKey.pc)) return spellAugmentedSixthNote(midi, selectedKey.pc, selectedKey.mode);
-  return spellPlayedNote(midi, chord, accidentalPreference);
+  const dim7 = selectedKey && showSecondary && spellReadDim7Note(midi, chord, selectedKey.pc, selectedKey.mode);
+  return dim7 || spellPlayedNote(midi, chord, accidentalPreference);
 }
 
 // Roman numeral with any figured bass stacked after it: V⁶₅(♭9).

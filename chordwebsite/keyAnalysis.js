@@ -170,6 +170,24 @@ function leadingToneTarget(chord, interval, keyMode) {
   return options.sort((a, b) => LT_PRIORITY[keyMode].indexOf(a.t) - LT_PRIORITY[keyMode].indexOf(b.t))[0];
 }
 
+// A diminished 7th read from another of its notes is spelled from that root, as the leading tone of
+// its target: A C E♭ F♯ (vii°⁶₅/V in C), not A C E♭ G♭. Returns the note name with octave, or null.
+const SCALE_STEPS = { major: { 0: 0, 2: 1, 4: 2, 5: 3, 7: 4, 9: 5, 11: 6 },
+                      minor: { 0: 0, 2: 1, 3: 2, 5: 3, 7: 4, 8: 5, 10: 6 } };
+function spellReadDim7Note(midi, chord, keyPC, keyMode) {
+  if (!chord || chord.suffix !== "dim7") return null;
+  const lt = leadingToneTarget(chord, (chord.rootPC - keyPC + 12) % 12, keyMode);
+  if (!lt || lt.shift === 0) return null;
+  const tonic = ALL_KEYS.find(k => k.pc === keyPC && k.mode === keyMode).label.split(" ")[0]
+    .replace("♯", "#").replace("♭", "b");
+  const target = spellDegree(tonic, { semitone: lt.t, step: SCALE_STEPS[keyMode][lt.t] });
+  const root = spellDegree(target, { semitone: 11, step: 6 });
+  if (/##|bb/.test(root)) return null;   // a G𝄪 root would be harder to read than the plain spelling
+  const rootPC = (chord.rootPC + lt.shift) % 12;
+  const tone = chord.tones.find(t => t.semitone % 12 === (midi - rootPC + 120) % 12);
+  return tone ? withOctave(spellDegree(root, tone), midi) : null;
+}
+
 // The figured-bass numbers for an inverted chord, top to bottom (["6", "5"]), or null.
 // rootPC lets a diminished 7th be figured from a different root than the one it was named on.
 function figuredBass(chord, rootPC = chord.rootPC) {
