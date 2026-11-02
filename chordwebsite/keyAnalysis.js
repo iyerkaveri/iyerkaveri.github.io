@@ -107,8 +107,7 @@ function getRomanParts(chord, keyPC, keyMode, midis, secondary = false) {
 
   // Figured bass for inversions (bass is the chord's 3rd, 5th or 7th): triads 6 / 6-4, 7th chords
   // 6-5 / 4-3 / 4-2. The figure replaces the 7, and anything else goes in brackets: V⁶₅(♭9), I⁶(add2).
-  // A diminished 7th may be read from another of its notes (Adim7 → F♯dim7, vii°⁶₅/V).
-  const figure = figuredBass(chord, lt ? (chord.rootPC + lt.shift) % 12 : chord.rootPC);
+  const figure = figuredBass(chord);
   const of = target ? "/" + target : lt && lt.target ? "/" + lt.target : "";
   if (!figure) return { numeral: roman + ext + of, figure: null, after: "" };
   const m2 = ext.match(/^(maj|ø)?(7|9|11|13)?(.*)$/);
@@ -151,50 +150,32 @@ function secondaryTarget(chord, interval, keyMode) {
 
 // Secondary leading-tone chords: a dim triad, dim7 or half-diminished chord a half step below one of the
 // key's major or minor chords reads vii°/x, vii°7/x or viiø7/x; below the tonic it's plain vii°7.
-// Chords already in the key (vii° in major, ii° in minor) are left alone. A dim7 can be heard from any of
-// its four notes, so the recognised root is tried first, then the tonic, then V, ii, vi, IV, iii (major)
-// or V, iv, VI, III, VII (minor). Returns { shift, target } (target "" for the tonic), or null.
+// Chords already in the key (vii° in major, ii° in minor) are left alone. A dim7 is always read from the
+// note it's named on, in root position, and may point at any degree: Adim7 in C is vii°7/♭VII.
+// Returns { target } (target "" for the tonic), or null.
 const DIATONIC_DIM = { major: [11], minor: [2] };
-const LT_PRIORITY  = { major: [0, 7, 2, 9, 5, 4], minor: [0, 7, 5, 8, 3, 10] };
 function leadingToneTarget(chord, interval, keyMode) {
   const sfx = chord.suffix;
   const dim7 = sfx === "dim7";
   if (!dim7 && !["dim", "m7b5", "m9b5", "m11b5"].includes(sfx)) return null;
   if (!dim7 && DIATONIC_DIM[keyMode].includes(interval)) return null;
-  const label = t => t === 0 ? "" : SECONDARY_TARGETS[keyMode][t];
-  const options = (dim7 ? [0, 3, 6, 9] : [0])
-    .map(shift => ({ shift, target: label((interval + shift + 1) % 12), t: (interval + shift + 1) % 12 }))
-    .filter(o => o.target !== undefined);
-  if (!options.length) return null;
-  if (options[0].shift === 0) return options[0];
-  return options.sort((a, b) => LT_PRIORITY[keyMode].indexOf(a.t) - LT_PRIORITY[keyMode].indexOf(b.t))[0];
+  const t = (interval + 1) % 12;
+  if (t === 0) return { target: "" };
+  const target = SECONDARY_TARGETS[keyMode][t] ?? (dim7 ? chromaticTarget(t, keyMode) : undefined);
+  return target === undefined ? null : { target };
 }
 
-// A diminished 7th read from another of its notes is spelled from that root, as the leading tone of
-// its target: A C E♭ F♯ (vii°⁶₅/V in C), not A C E♭ G♭. Returns the note name with octave, or null.
-const SCALE_STEPS = { major: { 0: 0, 2: 1, 4: 2, 5: 3, 7: 4, 9: 5, 11: 6 },
-                      minor: { 0: 0, 2: 1, 3: 2, 5: 3, 7: 4, 8: 5, 10: 6 } };
-function spellReadDim7Note(midi, chord, keyPC, keyMode) {
-  if (!chord || chord.suffix !== "dim7") return null;
-  const lt = leadingToneTarget(chord, (chord.rootPC - keyPC + 12) % 12, keyMode);
-  if (!lt || lt.shift === 0) return null;
-  const tonic = ALL_KEYS.find(k => k.pc === keyPC && k.mode === keyMode).label.split(" ")[0]
-    .replace("♯", "#").replace("♭", "b");
-  const target = spellDegree(tonic, { semitone: lt.t, step: SCALE_STEPS[keyMode][lt.t] });
-  const root = spellDegree(target, { semitone: 11, step: 6 });
-  if (/##|bb/.test(root)) return null;   // a G𝄪 root would be harder to read than the plain spelling
-  const rootPC = (chord.rootPC + lt.shift) % 12;
-  const tone = chord.tones.find(t => t.semitone % 12 === (midi - rootPC + 120) % 12);
-  return tone ? withOctave(spellDegree(root, tone), midi) : null;
+// A dim7's target outside the key's major and minor chords: the key's diminished chord (vii° in major,
+// ii° in minor) or an out-of-key degree, written uppercase (♭II, ♭III, ♯IV, ♭VI, ♭VII).
+function chromaticTarget(t, keyMode) {
+  if (DIATONIC_DIM[keyMode].includes(t)) return (keyMode === "major" ? "vii" : "ii") + "°";
+  return (keyMode === "major" ? MAJOR_ROMAN : MINOR_ROMAN)[t];
 }
 
 // The figured-bass numbers for an inverted chord, top to bottom (["6", "5"]), or null.
-// rootPC lets a diminished 7th be figured from a different root than the one it was named on.
-function figuredBass(chord, rootPC = chord.rootPC) {
-  if (!chord.tones) return null;
-  const bassPC = chord.bassName ? pcFromName(chord.bassName) : chord.rootPC;
-  const bassIv = (bassPC - rootPC + 12) % 12;
-  if (bassIv === 0) return null;
+function figuredBass(chord) {
+  if (!chord.bassName || !chord.tones) return null;
+  const bassIv = (pcFromName(chord.bassName) - chord.rootPC + 12) % 12;
   const bassTone = chord.tones.find(t => t.semitone % 12 === bassIv);
   if (!bassTone) return null;
   const has7 = chord.tones.some(t => t.step === 6);
