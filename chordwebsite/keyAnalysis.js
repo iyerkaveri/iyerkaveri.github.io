@@ -44,7 +44,8 @@ const MINOR_ROMAN = [
 // chord must have { rootPC, suffix } (as returned by recognizeChord).
 // keyPC is the tonic pitch class (0–11); keyMode is "major" | "minor".
 // midis (the played notes) lets augmented 6th chords be recognised by their exact notes.
-// secondary: read dominant chords that lead to another degree as V/x (C7 in C → V7/IV).
+// secondary: read dominant chords that lead to another degree as V/x (C7 in C → V7/IV), and
+// diminished / half-diminished chords a half step below one as vii°7/x, viiø7/x (F♯dim7 in C → vii°7/V).
 function getRomanParts(chord, keyPC, keyMode, midis, secondary = false) {
   if (chord.suffix === "Q" || chord.suffix === "TT" || chord.poly) return null;
   const aug6 = midis && augmentedSixth(midis, keyPC);
@@ -54,7 +55,8 @@ function getRomanParts(chord, keyPC, keyMode, midis, secondary = false) {
   if (interval === 1 && chord.suffix === "") return { numeral: "N", figure: figuredBass(chord), after: "" };
   const table = keyMode === "major" ? MAJOR_ROMAN : MINOR_ROMAN;
   const target = secondary ? secondaryTarget(chord, interval, keyMode) : null;
-  const base  = target ? "V" : table[interval];   // e.g. "♭VII" or "IV"
+  const lt     = secondary && !target ? leadingToneTarget(chord, interval, keyMode) : null;
+  const base  = target ? "V" : lt ? "VII" : table[interval];   // e.g. "♭VII" or "IV"
 
   // Separate any leading ♭/♯ prefix from the numeral letters.
   const m       = base.match(/^([♭♯]?)(.+)$/);
@@ -65,7 +67,7 @@ function getRomanParts(chord, keyPC, keyMode, midis, secondary = false) {
   // Starts with 'm' but is NOT "maj7" / "maj9" (those are major quality).
   const sfx     = chord.suffix;
   const isMinor = sfx.startsWith("m") && !sfx.startsWith("maj");
-  // Full diminished (shows °); half-diminished (m7b5) is minor, not °.
+  // Full diminished (shows °); half-diminished (m7b5) is minor with ø (viiø7).
   const isDim   = sfx === "dim" || sfx === "dim7";
   const isAug   = sfx === "aug";
 
@@ -85,13 +87,13 @@ function getRomanParts(chord, keyPC, keyMode, midis, secondary = false) {
     "add2":     "add2",   "madd2":  "add2",   "add4":   "add4",   "madd4":  "add4",   "madd2add4": "add2add4", "add2add4": "add2add4", "(b5)": "(♭5)",
     "6":        "6",      "m6":     "6",      "6/9":    "6/9",    "m6/9":   "6/9",
     "maj7":     "maj7",   "7":      "7",      "m7":     "7",     "mM7":    "maj7",
-    "m7b5":     "7♭5",    "dim7":   "7",      "7#5":    "7♯5",   "7b5":    "7♭5",
+    "m7b5":     "ø7",    "dim7":   "7",      "7#5":    "7♯5",   "7b5":    "7♭5",
     "maj7#5":   "maj7♯5", "maj7(#11)": "maj7(♯11)", "maj9(#11)": "maj9(♯11)", "maj13(#11)": "maj13(♯11)",
     "maj11":    "maj11",  "mM9":    "maj9",   "mM11":   "maj11", "mM13":   "maj13",
     "9":        "9",      "maj9":   "maj9",   "m9":     "9",
     "7b9":      "7♭9",    "7#9":    "7♯9",    "7#11":   "7♯11",  "m11":    "11",
     "7b13":     "7♭13",   "9#11":   "9♯11",
-    "9#5":      "9♯5",    "maj9#5": "maj9♯5", "m9b5":   "9♭5",   "m11b5":  "11♭5",  "m7b13":  "7♭13",
+    "9#5":      "9♯5",    "maj9#5": "maj9♯5", "m9b5":   "ø9",    "m11b5":  "ø11",  "m7b13":  "7♭13",
     "11":       "11",     "6/9#11": "6/9♯11", "13#11":  "13♯11", "13b9#11": "13♭9♯11", "13#9#11": "13♯9♯11",
     "13sus4b9": "13sus4♭9",
     "13":       "13",     "maj13":  "maj13",  "m13":    "13",
@@ -105,10 +107,11 @@ function getRomanParts(chord, keyPC, keyMode, midis, secondary = false) {
 
   // Figured bass for inversions (bass is the chord's 3rd, 5th or 7th): triads 6 / 6-4, 7th chords
   // 6-5 / 4-3 / 4-2. The figure replaces the 7, and anything else goes in brackets: V⁶₅(♭9), I⁶(add2).
-  const figure = figuredBass(chord);
-  const of = target ? "/" + target : "";
+  // A diminished 7th may be read from another of its notes (Adim7 → F♯dim7, vii°⁶₅/V).
+  const figure = figuredBass(chord, lt ? (chord.rootPC + lt.shift) % 12 : chord.rootPC);
+  const of = target ? "/" + target : lt && lt.target ? "/" + lt.target : "";
   if (!figure) return { numeral: roman + ext + of, figure: null, after: "" };
-  const m2 = ext.match(/^(maj)?(7|9|11|13)?(.*)$/);
+  const m2 = ext.match(/^(maj|ø)?(7|9|11|13)?(.*)$/);
   const rest = (m2[2] && m2[2] !== "7" ? m2[2] : "") + m2[3];
   return { numeral: roman + (m2[1] || ""), figure, after: (rest ? "(" + rest.replace(/^\((.*)\)$/, "$1") + ")" : "") + of };
 }
@@ -146,10 +149,34 @@ function secondaryTarget(chord, interval, keyMode) {
   return SECONDARY_TARGETS[keyMode][(interval + 5) % 12] ?? null;
 }
 
+// Secondary leading-tone chords: a dim triad, dim7 or half-diminished chord a half step below one of the
+// key's major or minor chords reads vii°/x, vii°7/x or viiø7/x; below the tonic it's plain vii°7.
+// Chords already in the key (vii° in major, ii° in minor) are left alone. A dim7 can be heard from any of
+// its four notes, so the recognised root is tried first, then the tonic, then V, ii, vi, IV, iii (major)
+// or V, iv, VI, III, VII (minor). Returns { shift, target } (target "" for the tonic), or null.
+const DIATONIC_DIM = { major: [11], minor: [2] };
+const LT_PRIORITY  = { major: [0, 7, 2, 9, 5, 4], minor: [0, 7, 5, 8, 3, 10] };
+function leadingToneTarget(chord, interval, keyMode) {
+  const sfx = chord.suffix;
+  const dim7 = sfx === "dim7";
+  if (!dim7 && !["dim", "m7b5", "m9b5", "m11b5"].includes(sfx)) return null;
+  if (!dim7 && DIATONIC_DIM[keyMode].includes(interval)) return null;
+  const label = t => t === 0 ? "" : SECONDARY_TARGETS[keyMode][t];
+  const options = (dim7 ? [0, 3, 6, 9] : [0])
+    .map(shift => ({ shift, target: label((interval + shift + 1) % 12), t: (interval + shift + 1) % 12 }))
+    .filter(o => o.target !== undefined);
+  if (!options.length) return null;
+  if (options[0].shift === 0) return options[0];
+  return options.sort((a, b) => LT_PRIORITY[keyMode].indexOf(a.t) - LT_PRIORITY[keyMode].indexOf(b.t))[0];
+}
+
 // The figured-bass numbers for an inverted chord, top to bottom (["6", "5"]), or null.
-function figuredBass(chord) {
-  if (!chord.bassName || !chord.tones) return null;
-  const bassIv = (pcFromName(chord.bassName) - chord.rootPC + 12) % 12;
+// rootPC lets a diminished 7th be figured from a different root than the one it was named on.
+function figuredBass(chord, rootPC = chord.rootPC) {
+  if (!chord.tones) return null;
+  const bassPC = chord.bassName ? pcFromName(chord.bassName) : chord.rootPC;
+  const bassIv = (bassPC - rootPC + 12) % 12;
+  if (bassIv === 0) return null;
   const bassTone = chord.tones.find(t => t.semitone % 12 === bassIv);
   if (!bassTone) return null;
   const has7 = chord.tones.some(t => t.step === 6);
